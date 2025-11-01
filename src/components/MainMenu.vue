@@ -1,106 +1,133 @@
 <template>
-  <section class="relative bg-gray-50 py-16 lg:py-24">
-    <div class="container mx-auto px-4">
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <!-- Left Content -->
-        <div class="space-y-8">
-          <!-- Main Heading -->
-          <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-            Discover a place you'll love to live
+  <!-- HERO pleine hauteur avec image géante à droite -->
+  <section class="relative min-h-[86vh] lg:min-h-[88vh] bg-gray-950 overflow-hidden">
+    
+
+    <!-- Image géante ancrée à droite -->
+    <div
+      class="absolute inset-y-0 right-0 w-full lg:w-[60%]"
+    >
+      <img
+        :src="currentImage"
+        :alt="`Modern house ${currentImageIndex + 1}`"
+        class="h-full w-full object-cover"
+      />
+      <!-- léger voile pour lisibilité -->
+      <div class="absolute inset-0 bg-gradient-to-l from-gray-950/60 via-gray-950/30 to-transparent"></div>
+
+      <!-- points de pagination -->
+      <div class="absolute bottom-6 left-1/2 lg:left-auto lg:right-10 -translate-x-1/2 lg:translate-x-0 flex gap-2">
+        <button
+          v-for="(image, index) in images"
+          :key="index"
+          @click="currentImageIndex = index"
+          :class="[
+            'h-2.5 w-5 rounded-full transition-all',
+            currentImageIndex === index ? 'bg-white' : 'bg-white/50'
+          ]"
+          :aria-label="`show image ${index+1}`"
+        />
+      </div>
+    </div>
+
+    <!-- Colonne gauche (contenu) -->
+    <div class="relative z-10 container mx-auto px-4">
+      <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center min-h-[86vh] lg:min-h-[88vh]">
+        <div class="lg:col-span-6 xl:col-span-5 py-16 lg:py-0">
+          <!-- Logo (optionnel) -->
+          <!-- <img src="/logo.svg" class="h-8 mb-8 opacity-90" alt=""> -->
+
+          <h1 class="text-white text-5xl sm:text-6xl xl:text-7xl font-bold tracking-tight leading-tight">
+            <span class="font-light text-gray-200">Votre Futur Commence A Cette Adresse</span><br />
+            <!-- <span class="font-extrabold">commence à cette adresse</span> -->
           </h1>
 
-          <!-- Search Section -->
-          <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
-            <!-- Tabs -->
-            <div class="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <p class="text-white/80 mt-3 text-lg">Partout en Tunisie.</p>
+
+          <!-- Onglets Vente / Location -->
+          <div class="mt-8">
+            <div class="flex gap-8 text-white/80 text-sm font-semibold tracking-wide">
               <button
-                v-for="tab in tabs"
-                :key="tab"
-                @click="activeTab = tab"
-                :class="[
-                  'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-                  activeTab === tab
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                ]"
+                class="relative pb-2"
+                :class="activeTab==='For Sale' ? 'text-white' : ''"
+                @click="activeTab='For Sale'"
               >
-                {{ tab }}
+                VENTE
+                <span
+                  v-if="activeTab==='For Sale'"
+                  class="absolute left-0 -bottom-[2px] h-[3px] w-full bg-white rounded-full"
+                />
+              </button>
+              <button
+                class="relative pb-2"
+                :class="activeTab==='For Rent' ? 'text-white' : ''"
+                @click="activeTab='For Rent'"
+              >
+                LOCATION
+                <span
+                  v-if="activeTab==='For Rent'"
+                  class="absolute left-0 -bottom-[2px] h-[3px] w-full bg-white rounded-full"
+                />
               </button>
             </div>
+          </div>
 
-            <!-- Search Input -->
-            <div class="flex gap-3">
-              <div class="flex-1 relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21l-7-7m0 0l-7-7m7 7l7-7m-7 7v11" />
-                  </svg>
-                </div>
+          <!-- Barre de recherche pilule -->
+          <form
+            class="mt-6 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl p-2.5 pl-3 flex items-center gap-2"
+            @submit.prevent="handleSearch"
+          >
+            <!-- icône pilule -->
+            <div class="h-11 w-11 rounded-full bg-gray-100 grid place-items-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10.5L12 3l9 7.5M4.5 10.5V21h15V10.5" />
+              </svg>
+            </div>
+
+            <!-- champs -->
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 px-1">
+              <div class="flex items-center">
+                <select
+                  v-model="region"
+                  class="w-full bg-transparent px-3 py-2.5 rounded-lg border border-transparent focus:border-gray-300 focus:outline-none"
+                >
+                  <option value="" disabled>Sélectionner une région</option>
+                  <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
+                </select>
+              </div>
+              <div class="flex items-center">
                 <input
                   v-model="searchKeyword"
                   type="text"
-                  placeholder="Enter Keyword"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Municipalités"
+                  class="w-full bg-transparent px-3 py-2.5 rounded-lg border border-transparent focus:border-gray-300 focus:outline-none"
                 />
               </div>
-              
-              <button
-                @click="toggleAdvanced"
-                class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-              >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                </svg>
-                Advanced
-              </button>
-              
-              <button
-                @click="handleSearch"
-                class="px-8 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
             </div>
-          </div>
 
-          <!-- Statistics -->
-          <div class="grid grid-cols-3 gap-8">
+            <!-- bouton rechercher -->
+            <button
+              type="submit"
+              class="h-11 w-11 rounded-full bg-gray-900 text-white grid place-items-center hover:bg-gray-800 transition-colors shrink-0"
+              title="Rechercher"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.2-5.2M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </button>
+          </form>
+
+          <!-- Stats -->
+          <div class="mt-10 grid grid-cols-3 gap-6">
             <div v-for="stat in stats" :key="stat.label" class="text-center lg:text-left">
-              <div class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                {{ stat.value }}
-              </div>
-              <div class="text-gray-600 text-sm">
-                {{ stat.label }}
-              </div>
+              <div class="text-3xl lg:text-4xl font-bold text-white">{{ stat.value }}</div>
+              <div class="text-white/70 text-sm">{{ stat.label }}</div>
             </div>
           </div>
         </div>
 
-        <!-- Right Image -->
-        <div class="relative">
-          <div class="relative overflow-hidden rounded-2xl">
-            <img
-              :src="currentImage"
-              :alt="`Modern house ${currentImageIndex + 1}`"
-              class="w-full h-96 lg:h-[500px] object-cover transition-opacity duration-500"
-            />
-            
-            <!-- Image Navigation Dots -->
-            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
-              <button
-                v-for="(image, index) in images"
-                :key="index"
-                @click="currentImageIndex = index"
-                :class="[
-                  'w-3 h-3 rounded-full transition-colors',
-                  currentImageIndex === index ? 'bg-white' : 'bg-white/50'
-                ]"
-              />
-            </div>
-          </div>
-        </div>
+        <!-- colonne fantôme pour équilibrer la grille sur grands écrans -->
+        <div class="hidden lg:block lg:col-span-6 xl:col-span-7"></div>
       </div>
     </div>
   </section>
@@ -109,51 +136,43 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-// Reactive data
-const activeTab = ref('All')
+const activeTab = ref<'All' | 'For Sale' | 'For Rent'>('For Sale')
 const searchKeyword = ref('')
-const showAdvanced = ref(false)
-const currentImageIndex = ref(0)
+const region = ref('')
 
-// Static data
-const tabs = ['All', 'For Sale', 'For Rent']
+const regions = ['Grand Tunis', 'Cap Bon', 'Sousse', 'Monastir', 'Mahdia', 'Bizerte']
 
 const stats = [
-  { value: '154', label: 'Award Winning' },
-  { value: '6K+', label: 'Happy Customer' },
-  { value: '558+', label: 'Property Ready' }
+  { value: '154',  label: 'Awards' },
+  { value: '6K+',  label: 'Clients satisfaits' },
+  { value: '558+', label: 'Biens publiés' }
 ]
 
+// images plein écran (droite)
 const images = [
   'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
   'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg',
   'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg'
 ]
 
-// Computed properties
+const currentImageIndex = ref(0)
 const currentImage = computed(() => images[currentImageIndex.value])
 
-// Methods
-const handleSearch = () => {
-  console.log('Searching for:', searchKeyword.value, 'in', activeTab.value)
+function handleSearch () {
+  console.log('Search:', { type: activeTab.value, region: region.value, keyword: searchKeyword.value })
+  // ex: router push -> /properties?type=...&region=...&q=...
 }
 
-const toggleAdvanced = () => {
-  showAdvanced.value = !showAdvanced.value
-}
-
-// Auto-rotate images
-let imageInterval: NodeJS.Timeout
-
+let timer: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
-  imageInterval = setInterval(() => {
+  timer = setInterval(() => {
     currentImageIndex.value = (currentImageIndex.value + 1) % images.length
   }, 4000)
 })
-
-onUnmounted(() => {
-  if (imageInterval) {
-    clearInterval(imageInterval)
-  }
-})
+onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
+
+<style scoped>
+/* corrige l’alias container Tailwind si nécessaire */
+.container { max-width: 1200px; }
+</style>

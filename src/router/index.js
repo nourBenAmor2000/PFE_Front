@@ -14,6 +14,32 @@ import AgencyDetail from "../views/AgencyDetail.vue"
 import AgentProfile from "../views/AgentProfile.vue"
 import Unauthorized from "../views/Unauthorized.vue"
 import { setupRouteGuards } from "./guards"
+import EditVisitsView from "@/views/Visits/EditVisitsView.vue"
+import AddVisitsView from "@/views/Visits/AddVisitsView.vue"
+import VisitsView from "@/views/Visits/VisitsView.vue"
+import EditSubCategoryView from "../views/SubCategory/EditSubCategoryView.vue"
+import AddSubCategoryView from "../views/SubCategory/AddSubCategoryView.vue"
+import SubCategoryView from "../views/SubCategory/SubCategoryView.vue"
+import EditLogementView from "../views/Logements/EditLogementView.vue"
+import AddLogementView from "../views/Logements/AddLogementView.vue"
+import LogementView from "../views/Logements/LogementView.vue"
+import EditContractView from "../views/Contracts/EditContractView.vue"
+import AddContractView from "../views/Contracts/AddContractView.vue"
+import ContractsView from "../views/Contracts/ContractsView.vue"
+import EditClientView from "../views/Clients/EditClientView.vue"
+import AddClientView from "../views/Clients/AddClientView.vue"
+import ClientsView from "../views/Clients/ClientsView.vue"
+import EditCategoryView from "../views/Category/EditCategoryView.vue"
+import AddCategoryView from "../views/Category/AddCategoryView.vue"
+import CategoryView from "../views/Category/CategoryView.vue"
+import AddAgentView from "../views/Agents/AddAgentView.vue"
+import AgentsView from "../views/Agents/AgentsView.vue"
+import EditAgenciesView from "../views/Agencies/EditAgenciesView.vue"
+import AddAgenciesView from "../views/Agencies/AddAgenciesView.vue"
+import AgenciesView from "../views/Agencies/AgenciesView.vue"
+import EditAdminView from "../views/Admin/EditAdminView.vue"
+import AddAdminView from "../views/Admin/AddAdminView.vue"
+import AdminView from "../views/Admin/AdminView.vue"
 
 const routes = [
   {
@@ -92,6 +118,194 @@ const routes = [
     name: "Unauthorized",
     component: Unauthorized,
   },
+  // ===== ADMIN CRUD ROUTES =====
+{
+  path: "/admin/admins",
+  name: "AdminView",
+  component: AdminView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/admins/add",
+  name: "AddAdminView",
+  component: AddAdminView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/admins/edit/:id",
+  name: "EditAdminView",
+  component: EditAdminView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== AGENCIES CRUD ROUTES =====
+{
+  path: "/admin/agencies",
+  name: "AgenciesView",
+  component: AgenciesView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/agencies/add",
+  name: "AddAgenciesView",
+  component: AddAgenciesView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/agencies/edit/:id",
+  name: "EditAgenciesView",
+  component: EditAgenciesView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== AGENTS CRUD ROUTES =====
+{
+  path: "/admin/agents",
+  name: "AgentsView",
+  component: AgentsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/agents/add",
+  name: "AddAgentView",
+  component: () => AddAgentView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/agents/edit/:id",
+  name: "EditAgentView",
+  component: EditCategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== CATEGORY CRUD ROUTES =====
+{
+  path: "/admin/categories",
+  name: "CategoryView",
+  component: CategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/categories/add",
+  name: "AddCategoryView",
+  component: AddCategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/categories/edit/:id",
+  name: "EditCategoryView",
+  component: EditCategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== CLIENTS CRUD ROUTES =====
+{
+  path: "/admin/clients",
+  name: "ClientsView",
+  component: ClientsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/clients/add",
+  name: "AddClientView",
+  component: AddClientView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/clients/edit/:id",
+  name: "EditClientView",
+  component: EditClientView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== CONTRACTS CRUD ROUTES =====
+{
+  path: "/admin/contracts",
+  name: "ContractsView",
+  component: ContractsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/contracts/add",
+  name: "AddContractView",
+  component: AddContractView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/contracts/edit/:id",
+  name: "EditContractView",
+  component: EditContractView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== LOGEMENTS CRUD ROUTES =====
+{
+  path: "/admin/logements",
+  name: "LogementView",
+  component: LogementView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/logements/add",
+  name: "AddLogementView",
+  component: () => AddLogementView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/logements/edit/:id",
+  name: "EditLogementView",
+  component: () => EditLogementView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== SUBCATEGORY CRUD ROUTES =====
+{
+  path: "/admin/subcategories",
+  name: "SubCategoryView",
+  component: () => SubCategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/subcategories/add",
+  name: "AddSubCategoryView",
+  component: () => AddSubCategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/subcategories/edit/:id",
+  name: "EditSubCategoryView",
+  component: EditSubCategoryView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== VISITS CRUD ROUTES =====
+{
+  path: "/admin/visits",
+  name: "VisitsView",
+  component: VisitsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/visits/add",
+  name: "AddVisitsView",
+  component: AddVisitsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/visits/edit/:id",
+  name: "EditVisitsView",
+  component:  EditVisitsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
   {
     path: "/profile",
     name: "Profile",

@@ -27,6 +27,18 @@
         </div>
         
         <div class="space-y-4">
+          <div>
+              <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+              <input
+                id="username"
+                v-model="form.username"
+                name="username"
+                type="text"
+                required
+                class="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Username"
+              />
+            </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="firstName" class="block text-sm font-medium text-gray-700">First name</label>
@@ -170,6 +182,7 @@ const router = useRouter()
 const { register, isLoading } = useAuth()
 
 const form = ref({
+  username: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -197,6 +210,7 @@ const handleRegister = async () => {
   }
   
   const result = await register({
+    username: form.value.username,
     name: `${form.value.firstName} ${form.value.lastName}`,
     email: form.value.email,
     phone: form.value.phone,

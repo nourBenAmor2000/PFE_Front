@@ -2,145 +2,223 @@
 
 import { ref, computed } from "vue"
 import { useRouter } from "vue-router"
+import axios from "axios"
 
-// Global state
+// ---- Axios base ----
+const API_BASE =
+  (import.meta.env.VITE_BACKEND_URL && import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "")) ||
+  "http://localhost:8000/api"
+
+const token = ref(null)
 const user = ref(null)
 const isLoading = ref(false)
+
+const api = axios.create({
+  baseURL: API_BASE,
+  headers: { "Content-Type": "application/json", Accept: "application/json" },
+})
+
+// attach token if present
+api.interceptors.request.use((cfg) => {
+  const t = token.value || localStorage.getItem("token")
+  if (t) cfg.headers.Authorization = `Bearer ${t}`
+  return cfg
+})
+
+// optional: auto-logout on 401
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    if (err?.response?.status === 401) {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      token.value = null
+      user.value = null
+    }
+    return Promise.reject(err)
+  }
+)
 
 export function useAuth() {
   const router = useRouter()
 
-  // Computed properties
-  const isAuthenticated = computed(() => !!user.value)
-  const userRole = computed(() => user.value?.role || null)
+  // computed roles
+  
+  const isAuthenticated = computed(() => !!(user.value || localStorage.getItem("token")))
+  const userRole = computed(() => (user.value && user.value.role) || null)
   const isAgentPersonnel = computed(() => userRole.value === "agent_personnel")
   const isAgentRH = computed(() => userRole.value === "agent_rh")
   const isAdminAgence = computed(() => userRole.value === "admin_agence")
   const isAdminGlobal = computed(() => userRole.value === "admin_global")
   const isAgent = computed(
-    () => userRole.value === "agent_personnel" || userRole.value === "agent_rh" || userRole.value === "admin_agence",
+    () =>
+      userRole.value === "agent_personnel" ||
+      userRole.value === "agent_rh" ||
+      userRole.value === "admin_agence"
   )
-  const isAdmin = computed(() => userRole.value === "admin_agence" || userRole.value === "admin_global")
+  const isAdmin = computed(
+    () => userRole.value === "admin_agence" || userRole.value === "admin_global"
+  )
   const isClient = computed(() => userRole.value === "client")
 
-  // Initialize auth state from localStorage
+  // Initialize from localStorage
   const initAuth = () => {
     const storedUser = localStorage.getItem("user")
+    const storedToken = localStorage.getItem("token")
+    if (storedToken) token.value = storedToken
     if (storedUser) {
       try {
         user.value = JSON.parse(storedUser)
-      } catch (error) {
-        console.error("Error parsing stored user:", error)
+      } catch (e) {
+        console.error("Error parsing stored user:", e)
         localStorage.removeItem("user")
       }
     }
   }
 
-  // Login function
-  const login = async (credentials) => {
+  // Helpers to normalize API responses
+  const extractAuthPayload = (data) => {
+    // token: token | access_token | jwt | data.token
+    const t =
+      data?.token ||
+      data?.access_token ||
+      data?.jwt ||
+      data?.data?.token ||
+      null
+    // user: client | user | agent | data (si data = user)
+    const u =
+      data?.client ||
+      data?.user ||
+      data?.agent ||
+      data?.data ||
+      null
+    return { t, u }
+  }
+
+  function persistAuth({ t, u }) {
+  if (t) {
+    token.value = t
+    localStorage.setItem("token", t)
+  }
+  if (u) {
+    // 🔧 normalisation
+    if (!u.name && u.username) u.name = u.username
+    user.value = u
+    localStorage.setItem("user", JSON.stringify(u))
+  }
+}
+
+
+  // -------- AUTH CALLS --------
+
+  // Login: credentials = { email, password }, type = "client" | "agent"
+  const login = async (credentials, type = "client") => {
     isLoading.value = true
     try {
-      // Mock API call - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const endpoint = type === "agent" ? "/agent/login" : "/admin/login"
+      const { data } = await api.post(endpoint, credentials)
+      const payload = extractAuthPayload(data)
+      if (!payload.t && !payload.u) throw new Error("Unexpected login response format")
+if (!payload.u && payload.t) {
+  api.defaults.headers.Authorization = `Bearer ${payload.t}`
+  payload.u = await fetchMe('admin') // /client/me
+}
 
-      let role = "client" // default role
-
-      if (credentials.email.includes("admin-global")) {
-        role = "admin_global"
-      } else if (credentials.email.includes("admin-agence")) {
-        role = "admin_agence"
-      } else if (credentials.email.includes("agent-rh")) {
-        role = "agent_rh"
-      } else if (credentials.email.includes("agent")) {
-        role = "agent_personnel"
+      // If backend doesn’t return role, infer a default
+      if (payload.u && !payload.u.role) {
+        payload.u.role = type === "agent" ? "agent_personnel" : "client"
       }
-
-      const mockUser = {
-        id: Math.floor(Math.random() * 1000),
-        name: credentials.email.split("@")[0],
-        email: credentials.email,
-        role: role,
-        avatar: `https://ui-avatars.com/api/?name=${credentials.email.split("@")[0]}&background=f97316&color=fff`,
-        phone: "+1 (555) 123-4567",
-        joinDate: new Date().toISOString(),
-        verified: true,
-        agencyId: role !== "admin_global" && role !== "client" ? Math.floor(Math.random() * 10) + 1 : null,
-      }
-
-      user.value = mockUser
-      localStorage.setItem("user", JSON.stringify(mockUser))
-
-      return { success: true, user: mockUser }
+       console.log('my user ',user.value);
+      persistAuth(payload)
+      return { success: true, user: user.value, token: token.value }
     } catch (error) {
-      return { success: false, error: error.message }
+      return {
+        success: false,
+        error: (error && error.response && error.response.data && error.response.data.message) || error.message || "Login failed",
+      }
     } finally {
       isLoading.value = false
     }
   }
 
-  // Register function
+  // Register (client only). userData must match your backend fields.
   const register = async (userData) => {
     isLoading.value = true
     try {
-      // Mock API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const newUser = {
-        id: Math.floor(Math.random() * 1000),
-        name: userData.name,
-        email: userData.email,
-        role: userData.role || "client",
-        avatar: `https://ui-avatars.com/api/?name=${userData.name}&background=f97316&color=fff`,
-        phone: userData.phone || "",
-        joinDate: new Date().toISOString(),
-        verified: false,
-        agencyId:
-          userData.role !== "admin_global" && userData.role !== "client" ? Math.floor(Math.random() * 10) + 1 : null,
+      const { data } = await api.post("/client/register", userData)
+      // some APIs auto-login; if not, just return success
+      const payload = extractAuthPayload(data)
+      if (payload.t || payload.u) {
+        if (payload.u && !payload.u.role) payload.u.role = "client"
+        persistAuth(payload)
       }
-
-      user.value = newUser
-      localStorage.setItem("user", JSON.stringify(newUser))
-
-      return { success: true, user: newUser }
+      return { success: true, user: user.value || null, token: token.value || null }
     } catch (error) {
-      return { success: false, error: error.message }
+      return {
+        success: false,
+        error: (error && error.response && error.response.data && error.response.data.message) || error.message || "Registration failed",
+      }
     } finally {
       isLoading.value = false
     }
   }
 
-  // Logout function
+  // Send password reset email: requestPasswordEmail(email, "client"|"agent")
+  const requestPasswordEmail = async (email, type) => {
+    isLoading.value = true
+    try {
+      const endpoint = type === "agent" ? "/agent/password/email" : "/client/password/email"
+      const { data } = await api.post(endpoint, { email })
+      return { success: true, data }
+    } catch (error) {
+      return {
+        success: false,
+        error: (error && error.response && error.response.data && error.response.data.message) || error.message || "Failed to send password email",
+      }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Update profile: updateProfile(payload, "client"|"agent")
+  const updateProfile = async (updates, type) => {
+    if (!token.value) return { success: false, error: "Not authenticated" }
+    isLoading.value = true
+    try {
+      const endpoint = type === "agent" ? "/agent/profile/update" : "/client/profile/update"
+      const { data } = await api.put(endpoint, updates)
+      const updated = (data && (data.user || data.data)) || data || updates
+      const merged = Object.assign({}, user.value || {}, updated || {})
+      user.value = merged
+      localStorage.setItem("user", JSON.stringify(merged))
+      return { success: true, user: merged }
+    } catch (error) {
+      return {
+        success: false,
+        error: (error && error.response && error.response.data && error.response.data.message) || error.message || "Profile update failed",
+      }
+    } finally {
+      isLoading.value = false
+    }
+  }
+  
+  const fetchMe = async (type = "client") => {
+  const endpoint = type === "agent" ? "/agent/me" : "/admin/me"
+  const { data } = await api.get(endpoint)
+  return data.client || data.user || data.agent || data.data || data
+  }
+
   const logout = () => {
+    token.value = null
     user.value = null
+    localStorage.removeItem("token")
     localStorage.removeItem("user")
     router.push("/login")
   }
 
-  // Update user profile
-  const updateProfile = async (updates) => {
-    if (!user.value) return { success: false, error: "Not authenticated" }
-
-    isLoading.value = true
-    try {
-      // Mock API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const updatedUser = { ...user.value, ...updates }
-      user.value = updatedUser
-      localStorage.setItem("user", JSON.stringify(updatedUser))
-
-      return { success: true, user: updatedUser }
-    } catch (error) {
-      return { success: false, error: error.message }
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // Check if user has permission
+  // ---- Permissions (kept as-is) ----
   const hasPermission = (requiredRole, resourceAgencyId = null) => {
     if (!user.value) return false
-
     const roleHierarchy = {
       admin_global: 5,
       admin_agence: 4,
@@ -148,24 +226,15 @@ export function useAuth() {
       agent_personnel: 2,
       client: 1,
     }
-
     const userLevel = roleHierarchy[user.value.role] || 0
     const requiredLevel = roleHierarchy[requiredRole] || 0
-
-    // Global admin has access to everything
     if (user.value.role === "admin_global") return true
-
-    // For agency-specific roles, check agency association
-    if (resourceAgencyId && user.value.agencyId !== resourceAgencyId) {
-      return false
-    }
-
+    if (resourceAgencyId && user.value.agencyId !== resourceAgencyId) return false
     return userLevel >= requiredLevel
   }
 
   const canManageResource = (resourceType, resourceAgencyId = null) => {
     if (!user.value) return false
-
     switch (user.value.role) {
       case "admin_global":
         return true
@@ -189,7 +258,7 @@ export function useAuth() {
   }
 
   return {
-    // State
+    // state
     user: computed(() => user.value),
     isLoading: computed(() => isLoading.value),
     isAuthenticated,
@@ -199,19 +268,19 @@ export function useAuth() {
     isAgentRH,
     isAdminAgence,
     isAdminGlobal,
-    // Legacy compatibility
     isAgent,
     isAdmin,
-
-    // Methods
+    // methods
     initAuth,
-    login,
-    register,
+    login,                // login({ email, password }, "client" | "agent")
+    register,             // client register
+    requestPasswordEmail, // requestPasswordEmail(email, "client" | "agent")
+    updateProfile,        // updateProfile(payload, "client" | "agent")
     logout,
-    updateProfile,
     hasPermission,
     canManageResource,
   }
+  
 }
 
 export default useAuth

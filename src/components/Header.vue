@@ -1,397 +1,364 @@
 <template>
-  <header class="bg-white shadow-sm border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <!-- Logo -->
-        <router-link to="/" class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-            </svg>
-          </div>
-          <span class="text-xl font-bold text-gray-900">homez</span>
+  <!-- Sticky, translucent header with subtle border and scroll-aware shadow -->
+  <header
+    class="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-teal-50 supports-[backdrop-filter]:bg-white/60"
+    :class="{ 'shadow-sm': scrolled }"
+  >
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-18 lg:h-20 items-center justify-between gap-4">
+        <!-- Logo / Brand -->
+        <router-link
+          to="/"
+          class="group inline-flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-xl"
+          aria-label="Aller à l’accueil"
+        >
+          <img
+            src="/assets/images/logo.png"
+            alt="Logo Homez"
+            class="h-10 w-auto transition-transform duration-200 group-hover:scale-[1.02]"
+          />
+          <span class="hidden sm:inline-block text-xl font-semibold tracking-tight text-gray-900">
+            homez
+          </span>
         </router-link>
 
-        <!-- Desktop Navigation -->
-        <nav class="hidden lg:flex items-center space-x-8">
-          <div 
-            v-for="item in navigationItems" 
-            :key="item.name"
-            class="relative group"
-          >
-            <button 
-              class="flex items-center space-x-1 text-gray-700 hover:text-gray-900 font-medium transition-colors"
-              @click="toggleDropdown(item.name)"
-            >
-              <span>{{ item.name }}</span>
-              <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': activeDropdown === item.name }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            
-            <!-- Dropdown Menu -->
-            <div 
-              v-if="activeDropdown === item.name"
-              class="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50"
-            >
-              <router-link 
-                v-for="subItem in item.subItems" 
-                :key="subItem.name"
-                :to="subItem.path" 
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                @click="closeDropdowns"
-              >
-                {{ subItem.name }}
-              </router-link>
-            </div>
-          </div>
+        <!-- Primary Nav (Desktop) -->
+        <nav class="hidden lg:flex items-center gap-2 xl:gap-6" aria-label="Navigation principale">
+          <AppNavLink to="/professionnel" icon="briefcase" label="Immobilier Professionnel" />
+          <AppNavLink to="/evaluer" icon="clipboard" label="Évaluer mon bien" />
+          <AppNavLink to="/agences" icon="marker" label="Chercher une agence" />
         </nav>
 
-        <!-- Right Side Actions -->
-        <div class="flex items-center space-x-6">
-          <!-- Phone Number -->
-          <div class="hidden md:flex items-center space-x-2 text-gray-700">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+        <!-- Right zone: Auth + Theme + Burger -->
+        <div class="flex items-center gap-1 sm:gap-2">
+          <!-- Theme toggle (optional) -->
+          <button
+            type="button"
+            class="hidden sm:inline-flex items-center justify-center rounded-xl p-2 text-gray-600 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            @click="toggleTheme"
+            :aria-pressed="isDark ? 'true' : 'false'"
+            aria-label="Basculer le thème"
+          >
+            <svg v-if="!isDark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05 5.636 5.636m12.728 0-1.414 1.414M7.05 16.95l-1.414 1.414M12 8a4 4 0 100 8 4 4 0 000-8z"/>
             </svg>
-            <span class="font-medium">+(088) 123 456 789</span>
-          </div>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </button>
 
-          <!-- User Menu (when authenticated) -->
-          <div v-if="isAuthenticated" class="relative">
-            <button 
-              @click="toggleUserMenu"
-              class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
-            >
-              <img 
-                :src="user?.avatar" 
-                :alt="user?.name"
-                class="w-8 h-8 rounded-full object-cover"
-              />
-              <span class="hidden md:block font-medium">{{ user?.name }}</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            
-            <!-- User Dropdown -->
-            <div 
-              v-if="userMenuOpen"
-              class="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50"
-            >
-              <div class="px-4 py-2 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900">{{ user?.name }}</p>
-                <p class="text-xs text-gray-500">{{ user?.email }}</p>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 capitalize mt-1">
-                  {{ user?.role }}
-                </span>
-              </div>
-              
-              <router-link 
-                to="/dashboard" 
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                @click="closeUserMenu"
+          <!-- Auth area (Desktop) -->
+          <div v-if="hydrated" class="relative hidden lg:block">
+            <!-- Logged in -->
+            <template v-if="isAuthenticated">
+              <button
+                ref="userButtonRef"
+                type="button"
+                class="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                @click.stop="toggleUserMenu"
+                aria-haspopup="menu"
+                :aria-expanded="userMenuOpen ? 'true' : 'false'"
+                aria-controls="user-menu"
               >
-                Dashboard
-              </router-link>
-              
-              <router-link 
-                to="/profile" 
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                @click="closeUserMenu"
-              >
-                Profile
-              </router-link>
-              
-              <router-link 
-                v-if="isAgent" 
-                to="/agent-profile" 
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                @click="closeUserMenu"
-              >
-                Agent Profile
-              </router-link>
-              
-              <router-link 
-                v-if="isAdmin" 
-                to="/admin" 
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                @click="closeUserMenu"
-              >
-                Admin Dashboard
-              </router-link>
-              
-              <div class="border-t border-gray-100 mt-2 pt-2">
-                <button 
-                  @click="handleLogout"
-                  class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                <img
+                  :src="user?.avatar || avatarFallback"
+                  :alt="displayName"
+                  class="h-8 w-8 rounded-full object-cover ring-2 ring-teal-500/20 group-hover:ring-teal-500/40"
+                />
+                <span class="max-w-[160px] truncate">{{ displayName }}</span>
+                <svg class="h-4 w-4 transition-transform group-data-[open=true]:rotate-180" :class="{ 'rotate-180': userMenuOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              <!-- Dropdown -->
+              <transition name="fade-scale">
+                <div
+                  v-if="userMenuOpen"
+                  id="user-menu"
+                  role="menu"
+                  class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg ring-1 ring-black/5"
+                  @click.stop
                 >
-                  Sign out
-                </button>
-              </div>
-            </div>
-          </div>
+                  <router-link
+                    to="/profile"
+                    class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                    role="menuitem"
+                    @click="closeUserMenu"
+                  >
+                    <Icon name="user" class="h-4 w-4" />
+                    <span>Mon Profil</span>
+                  </router-link>
 
-          <!-- Login/Register (when not authenticated) -->
-          <div v-else class="hidden md:flex items-center space-x-4">
-            <router-link 
+                  <router-link
+                    v-if="isAgent || isAdmin"
+                    to="/mes-annonces"
+                    class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                    role="menuitem"
+                    @click="closeUserMenu"
+                  >
+                    <Icon name="home" class="h-4 w-4" />
+                    <span>Mes Annonces</span>
+                  </router-link>
+
+                  <div class="my-1 border-t border-gray-100"></div>
+
+                  <button
+                    class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
+                    role="menuitem"
+                    @click="handleLogout"
+                  >
+                    <Icon name="logout" class="h-4 w-4" />
+                    <span>Déconnexion</span>
+                  </button>
+                </div>
+              </transition>
+            </template>
+
+            <!-- Logged out -->
+            <router-link
+              v-else
               to="/login"
-              class="flex items-center space-x-1 text-gray-700 hover:text-gray-900 font-medium"
+              class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              <span>Login</span>
-            </router-link>
-            
-            <router-link 
-              to="/register"
-              class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium"
-            >
-              Register
+              <Icon name="user" class="h-5 w-5" />
+              <span>Se connecter</span>
             </router-link>
           </div>
 
-          <!-- Add Property Button -->
-          <router-link 
-            v-if="isAuthenticated && (isAgent || isAdmin)"
-            to="/add-property"
-            class="hidden md:flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          <!-- Burger (Mobile) -->
+          <button
+            class="inline-flex lg:hidden items-center justify-center rounded-xl p-2 text-gray-700 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            @click="openMobileMenu"
+            aria-controls="mobile-drawer"
+            :aria-expanded="mobileMenuOpen ? 'true' : 'false'"
           >
-            <span>Add Property</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-            </svg>
-          </router-link>
-
-          <!-- Mobile Menu Button -->
-          <button 
-            class="lg:hidden p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-            @click="toggleMobileMenu"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
+            <Icon name="menu" class="h-6 w-6" />
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- Mobile Menu -->
-      <div v-if="mobileMenuOpen" class="lg:hidden border-t border-gray-100 py-4">
-        <div class="space-y-4">
-          <div v-for="item in navigationItems" :key="item.name">
-            <button 
-              class="flex items-center justify-between w-full text-left text-gray-700 hover:text-gray-900 font-medium py-2"
-              @click="toggleMobileDropdown(item.name)"
-            >
-              <span>{{ item.name }}</span>
-              <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': activeMobileDropdown === item.name }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            <div v-if="activeMobileDropdown === item.name" class="pl-4 space-y-2">
-              <router-link 
-                v-for="subItem in item.subItems" 
-                :key="subItem.name"
-                :to="subItem.path" 
-                class="block text-sm text-gray-600 hover:text-gray-900 py-1"
-                @click="closeDropdowns"
-              >
-                {{ subItem.name }}
-              </router-link>
-            </div>
-          </div>
-          
-          <!-- Mobile Actions -->
-          <div class="pt-4 border-t border-gray-100 space-y-3">
-            <div class="flex items-center space-x-2 text-gray-700">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-              </svg>
-              <span class="font-medium">+(088) 123 456 789</span>
-            </div>
-            
-            <!-- Mobile Auth Actions -->
-            <div v-if="isAuthenticated" class="space-y-2">
-              <div class="flex items-center space-x-2 py-2">
-                <img 
-                  :src="user?.avatar" 
-                  :alt="user?.name"
-                  class="w-8 h-8 rounded-full object-cover"
-                />
+    <!-- Mobile Drawer + Overlay -->
+    <transition name="fade">
+      <div v-if="mobileMenuOpen" class="fixed inset-0 z-40 bg-black/30" @click="closeMobileMenu" />
+    </transition>
+
+    <transition name="slide">
+      <aside
+        v-if="mobileMenuOpen"
+        id="mobile-drawer"
+        class="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-xl ring-1 ring-black/5"
+        role="dialog"
+        aria-modal="true"
+        @keydown.esc="closeMobileMenu"
+      >
+        <div class="flex h-16 items-center justify-between px-4 border-b border-gray-100">
+          <span class="text-base font-semibold">Menu</span>
+          <button
+            class="rounded-xl p-2 text-gray-700 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            @click="closeMobileMenu"
+            aria-label="Fermer le menu"
+          >
+            <Icon name="close" class="h-6 w-6" />
+          </button>
+        </div>
+
+        <nav class="flex flex-col gap-1 p-3" aria-label="Navigation mobile">
+          <MobileLink to="/professionnel" label="Immobilier Professionnel" icon="briefcase" @navigate="closeMobileMenu" />
+          <MobileLink to="/evaluer" label="Évaluer mon bien" icon="clipboard" @navigate="closeMobileMenu" />
+          <MobileLink to="/agences" label="Chercher une agence" icon="marker" @navigate="closeMobileMenu" />
+
+          <div v-if="hydrated" class="mt-2 border-t border-gray-100 pt-3">
+            <template v-if="isAuthenticated">
+              <div class="flex items-center gap-3 px-2 py-2">
+                <img :src="user?.avatar || avatarFallback" :alt="displayName" class="h-10 w-10 rounded-full object-cover ring-2 ring-teal-500/20" />
                 <div>
-                  <p class="text-sm font-medium text-gray-900">{{ user?.name }}</p>
-                  <p class="text-xs text-gray-500 capitalize">{{ user?.role }}</p>
+                  <p class="text-sm font-medium text-gray-900">{{ displayName }}</p>
+                  <p class="text-xs text-gray-500">Connecté</p>
                 </div>
               </div>
-              
-              <router-link 
-                to="/dashboard"
-                class="block text-gray-700 hover:text-gray-900 py-1"
-                @click="closeMobileMenu"
-              >
-                Dashboard
-              </router-link>
-              
-              <router-link 
-                to="/profile"
-                class="block text-gray-700 hover:text-gray-900 py-1"
-                @click="closeMobileMenu"
-              >
-                Profile
-              </router-link>
-              
-              <router-link 
-                v-if="isAgent" 
-                to="/agent-profile" 
-                class="block text-gray-700 hover:text-gray-900 py-1"
-                @click="closeMobileMenu"
-              >
-                Agent Profile
-              </router-link>
-              
-              <router-link 
-                v-if="isAdmin" 
-                to="/admin" 
-                class="block text-gray-700 hover:text-gray-900 py-1"
-                @click="closeMobileMenu"
-              >
-                Admin Dashboard
-              </router-link>
-              
-              <button 
+              <MobileLink to="/profile" label="Mon Profil" icon="user" @navigate="closeMobileMenu" />
+              <MobileLink v-if="isAgent || isAdmin" to="/mes-annonces" label="Mes Annonces" icon="home" @navigate="closeMobileMenu" />
+              <button
+                class="mt-2 inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                 @click="handleLogout"
-                class="block w-full text-left text-red-600 hover:text-red-700 py-1"
               >
-                Sign out
+                <Icon name="logout" class="h-5 w-5" />
+                <span>Déconnexion</span>
               </button>
-            </div>
-            
-            <div v-else class="space-y-2">
-              <router-link 
-                to="/login"
-                class="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
-                @click="closeMobileMenu"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-                <span class="font-medium">Login</span>
-              </router-link>
-              
-              <router-link 
-                to="/register"
-                class="block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium text-center"
-                @click="closeMobileMenu"
-              >
-                Register
-              </router-link>
-            </div>
-            
-            <router-link 
-              v-if="isAuthenticated && (isAgent || isAdmin)"
-              to="/add-property"
-              class="w-full flex items-center justify-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+            </template>
+            <router-link
+              v-else
+              to="/login"
+              class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50"
               @click="closeMobileMenu"
             >
-              <span>Add Property</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-              </svg>
+              <Icon name="user" class="h-5 w-5" />
+              <span>Se connecter</span>
             </router-link>
           </div>
-        </div>
-      </div>
-    </div>
+        </nav>
+      </aside>
+    </transition>
   </header>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
-const authComposable = useAuth()
-const { user, isAuthenticated, isAgent, isAdmin, logout } = authComposable
-
-const navigationItems = [
-  {
-    name: 'Home',
-    subItems: [
-      { name: 'Home 1', path: '/' },
-      { name: 'Home 2', path: '/' },
-      { name: 'Home 3', path: '/' }
-    ]
-  },
-  {
-    name: 'Listings',
-    subItems: [
-      { name: 'All Properties', path: '/properties' },
-      { name: 'Featured', path: '/properties?featured=true' },
-      { name: 'For Sale', path: '/properties?status=for-sale' },
-      { name: 'For Rent', path: '/properties?status=for-rent' }
-    ]
-  },
-  {
-    name: 'Members',
-    subItems: [
-      { name: 'All Agents', path: '/agents' },
-      { name: 'Agencies', path: '/agencies' }
-    ]
-  },
-  {
-    name: 'Pages',
-    subItems: [
-      { name: 'Cities', path: '/cities' },
-      { name: 'About', path: '/about' },
-      { name: 'Contact', path: '/contact' }
-    ]
-  }
-]
-
-const activeDropdown = ref(null)
-const activeMobileDropdown = ref(null)
-const mobileMenuOpen = ref(false)
-const userMenuOpen = ref(false)
-
-const toggleDropdown = (itemName) => {
-  activeDropdown.value = activeDropdown.value === itemName ? null : itemName
-}
-
-const toggleMobileDropdown = (itemName) => {
-  activeMobileDropdown.value = activeMobileDropdown.value === itemName ? null : itemName
-}
-
-const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
-
-const toggleUserMenu = () => {
-  userMenuOpen.value = !userMenuOpen.value
-}
-
-const closeUserMenu = () => {
-  userMenuOpen.value = false
-}
-
-const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
-
-const handleLogout = () => {
-  logout()
-  closeUserMenu()
-  closeMobileMenu()
-}
-
-const closeDropdowns = () => {
-  activeDropdown.value = null
-  activeMobileDropdown.value = null
-  userMenuOpen.value = false
-}
+/* Auth state */
+const { user, isAuthenticated, isAgent, isAdmin, logout, initAuth } = useAuth()
+const hydrated = ref(false)
 
 onMounted(() => {
-  if (typeof window !== 'undefined') {
-    document.addEventListener('click', closeDropdowns)
+  initAuth()
+  hydrated.value = true
+})
+
+/* Display name */
+const displayName = computed(() => {
+  const u: any = user?.value || null
+  if (!u) return ''
+  return u.name || u.username || (u.email ? u.email.split('@')[0] : 'Utilisateur')
+})
+
+/* Avatar fallback */
+const avatarFallback = 'https://ui-avatars.com/api/?name=User&background=10b981&color=fff&bold=true'
+
+/* Scroll shadow */
+const scrolled = ref(false)
+const onScroll = () => { scrolled.value = window.scrollY > 4 }
+
+onMounted(() => {
+  onScroll()
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+})
+
+/* Theme toggle (basic) */
+const isDark = ref(false)
+const toggleTheme = () => { isDark.value = !isDark.value; document.documentElement.classList.toggle('dark', isDark.value) }
+
+/* User menu */
+const userMenuOpen = ref(false)
+const userButtonRef = ref<HTMLElement | null>(null)
+const toggleUserMenu = () => (userMenuOpen.value = !userMenuOpen.value)
+const closeUserMenu = () => (userMenuOpen.value = false)
+
+/* Close on outside click */
+const onBodyClick = (e: MouseEvent) => {
+  const header = (e.target as HTMLElement).closest('header')
+  if (!header) {
+    userMenuOpen.value = false
+    mobileMenuOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onBodyClick))
+onUnmounted(() => document.removeEventListener('click', onBodyClick))
+
+/* Mobile drawer */
+const mobileMenuOpen = ref(false)
+const openMobileMenu = () => (mobileMenuOpen.value = true)
+const closeMobileMenu = () => (mobileMenuOpen.value = false)
+
+/* Route-aware active styles */
+const route = useRoute()
+const isActive = (to: string) => route.path.startsWith(to)
+
+/* Logout */
+const handleLogout = () => { logout(); userMenuOpen.value = false; mobileMenuOpen.value = false }
+</script>
+
+<!-- Local components: Icon, AppNavLink, MobileLink -->
+<script lang="ts">
+import { defineComponent, h, computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+
+const paths: Record<string, string> = {
+  briefcase: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  clipboard: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+  marker: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
+  user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+  home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+  logout: 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  close: 'M6 18L18 6M6 6l12 12'
+}
+
+export default defineComponent({
+  name: 'LocalComponents',
+  components: {
+    Icon: defineComponent({
+      name: 'Icon',
+      props: { name: { type: String, required: true }, class: { type: String, default: '' } },
+      setup(props) {
+        return () => h('svg', {
+          xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2',
+          class: props.class
+        }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: paths[props.name] || '' })])
+      }
+    }),
+
+    AppNavLink: defineComponent({
+      name: 'AppNavLink',
+      props: { to: { type: String, required: true }, label: { type: String, required: true }, icon: { type: String, required: true } },
+      setup(props) {
+        const route = useRoute()
+        const active = computed(() => route.path.startsWith(props.to))
+        return () => h(RouterLink, { to: props.to, class: [
+          'group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+          active.value ? 'text-teal-700' : 'text-gray-700 hover:text-teal-700 hover:bg-teal-50'
+        ] }, {
+          default: () => [
+            h('span', { class: 'relative inline-flex' }, [
+              h('span', { class: 'absolute -inset-1 rounded-lg bg-gradient-to-r from-teal-500/0 via-teal-500/0 to-teal-500/0 blur-sm opacity-0 transition group-hover:opacity-30' }),
+              h('span', { class: 'relative inline-flex items-center gap-2' }, [
+                h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', class: 'h-5 w-5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+                  h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: paths[props.icon] })
+                ]),
+                h('span', props.label)
+              ])
+            ])
+          ]
+        })
+      }
+    }),
+
+    MobileLink: defineComponent({
+      name: 'MobileLink',
+      emits: ['navigate'],
+      props: { to: { type: String, required: true }, label: { type: String, required: true }, icon: { type: String, required: true } },
+      setup(props, { emit }) {
+        const onClick = () => emit('navigate')
+        return () => h(RouterLink, { to: props.to, onClick, class: 'inline-flex items-center gap-3 rounded-xl px-3 py-3 text-gray-700 hover:text-teal-700 hover:bg-teal-50' }, [
+          h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', class: 'h-5 w-5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+            h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: paths[props.icon] })
+          ]),
+          h('span', { class: 'text-sm font-medium' }, props.label)
+        ])
+      }
+    })
   }
 })
 </script>
+
+<style scoped>
+/***** Transitions *****/
+.fade-enter-active, .fade-leave-active { transition: opacity 150ms ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.fade-scale-enter-active { transition: opacity 120ms ease, transform 120ms ease; transform-origin: 90% 0; }
+.fade-scale-leave-active { transition: opacity 100ms ease, transform 100ms ease; transform-origin: 90% 0; }
+.fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: translateY(-4px) scale(0.98); }
+
+.slide-enter-active { transition: transform 220ms cubic-bezier(.2,.7,.3,1); }
+.slide-leave-active { transition: transform 180ms ease; }
+.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
+</style>
