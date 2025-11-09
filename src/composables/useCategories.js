@@ -14,7 +14,7 @@ export const useCategories = defineStore('categories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}api/categories`)
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/categories`)
         this.categories = response.data.data
       } catch (err) {
         console.error('Failed to fetch categories:', err.response?.data || err.message)
@@ -29,7 +29,7 @@ export const useCategories = defineStore('categories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}api/categories`, { name })
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/categories`, { name })
         this.categories.push(response.data.data)
       } catch (err) {
         console.error('Failed to add category:', err.response?.data || err.message)
@@ -44,7 +44,7 @@ export const useCategories = defineStore('categories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/categories/${id}`, { name })
+        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/categories/${id}`, { name })
         const index = this.categories.findIndex(cat => cat.id === id)
         if (index !== -1) this.categories[index] = response.data.data
       } catch (err) {
@@ -60,7 +60,7 @@ export const useCategories = defineStore('categories', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}api/categories/${id}`)
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/categories/${id}`)
         this.categories = this.categories.filter(cat => cat.id !== id)
       } catch (err) {
         console.error('Failed to delete category:', err.response?.data || err.message)

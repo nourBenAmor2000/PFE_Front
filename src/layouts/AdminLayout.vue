@@ -80,8 +80,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useAuth } from '@/composables/useAuth'
+import { ref, computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import {
   HomeIcon,
@@ -91,22 +90,35 @@ import {
   LayersIcon,
   SettingsIcon,
   ClipboardListIcon,
+  ShieldUser,
 } from 'lucide-vue-next'
 
-const { user } = useAuth()
+// --- Get user from localStorage ---
+const storedUser = localStorage.getItem('user')
+const user = storedUser ? JSON.parse(storedUser) : null
+
 const route = useRoute()
 const sidebarOpen = ref(false)
 
-const menu = [
-  { name: 'Dashboard', route: '/admin', icon: HomeIcon },
-  { name: 'Clients', route: '/admin/clients', icon: UsersIcon },
-  { name: 'Agents', route: '/admin/agents', icon: UserCogIcon },
-  { name: 'Properties', route: '/admin/logements', icon: BuildingIcon },
-  { name: 'Subcategories', route: '/admin/subcategories', icon: LayersIcon },
-  { name: 'Contracts', route: '/admin/contracts', icon: ClipboardListIcon },
-  { name: 'Settings', route: '/admin/settings', icon: SettingsIcon },
+// --- Full menu definition ---
+const fullMenu = [
+  { name: 'Dashboard', route: '/dashboard', icon: HomeIcon, roles: ['admin_global', 'admin_agent', 'agent', 'client'] },
+    { name: 'Admins', route: '/admin/admins', icon: ShieldUser, roles: ['admin_global'] },
+  { name: 'Clients', route: '/admin/clients', icon: UsersIcon, roles: ['admin_global', 'admin_agent'] },
+  { name: 'Agents', route: '/admin/agents', icon: UserCogIcon, roles: ['admin_global'] },
+  { name: 'Properties', route: '/admin/logements', icon: BuildingIcon, roles: ['admin_global', 'admin_agent', 'agent'] },
+  { name: 'Subcategories', route: '/admin/subcategories', icon: LayersIcon, roles: ['admin_global', 'admin_agent'] },
+  { name: 'Contracts', route: '/admin/contracts', icon: ClipboardListIcon, roles: ['admin_global', 'admin_agent', 'agent'] },
 ]
+
+// --- Filter menu based on role ---
+const menu = computed(() => {
+  const role = user?.role
+  if (!role) return []
+  return fullMenu.filter(item => item.roles.includes(role))
+})
 </script>
+
 
 <style scoped>
 .router-link-active {

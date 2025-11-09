@@ -14,7 +14,7 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}api/subcategories`)
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories`)
         this.subcategories = response.data.data
       } catch (err) {
         console.error('Failed to fetch subcategories:', err.response?.data || err.message)
@@ -29,7 +29,7 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}api/subcategories`, payload)
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories`, payload)
         this.subcategories.push(response.data.data)
       } catch (err) {
         console.error('Failed to add subcategory:', err.response?.data || err.message)
@@ -44,7 +44,7 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/subcategories/${id}`, payload)
+        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories/${id}`, payload)
         const index = this.subcategories.findIndex(s => s.id === id)
         if (index !== -1) this.subcategories[index] = response.data.data
       } catch (err) {
@@ -60,7 +60,7 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}api/subcategories/${id}`)
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories/${id}`)
         this.subcategories = this.subcategories.filter(s => s.id !== id)
       } catch (err) {
         console.error('Failed to delete subcategory:', err.response?.data || err.message)

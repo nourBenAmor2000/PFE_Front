@@ -1,4 +1,5 @@
 <template>
+  <AdminLayout>
   <div class="min-h-screen bg-gray-50">
     <!-- Admin Header -->
     <div class="bg-white shadow-sm border-b border-gray-200">
@@ -407,11 +408,14 @@
       </div>
     </div>
   </div>
+  </AdminLayout>
+
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 
 const { user } = useAuth()
 

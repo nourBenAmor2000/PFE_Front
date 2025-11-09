@@ -115,14 +115,14 @@ export function useAuth() {
   const login = async (credentials, type = "client") => {
     isLoading.value = true
     try {
-      const endpoint = type === "agent" ? "/agent/login" : "/admin/login"
+      const endpoint = "/unified/login"
       const { data } = await api.post(endpoint, credentials)
       const payload = extractAuthPayload(data)
       if (!payload.t && !payload.u) throw new Error("Unexpected login response format")
-if (!payload.u && payload.t) {
-  api.defaults.headers.Authorization = `Bearer ${payload.t}`
-  payload.u = await fetchMe('admin') // /client/me
-}
+      if (!payload.u && payload.t) {
+        api.defaults.headers.Authorization = `Bearer ${payload.t}`
+        payload.u = await fetchMe('admin') // /client/me
+      }
 
       // If backend doesn’t return role, infer a default
       if (payload.u && !payload.u.role) {
@@ -213,7 +213,7 @@ if (!payload.u && payload.t) {
     user.value = null
     localStorage.removeItem("token")
     localStorage.removeItem("user")
-    router.push("/login")
+    router.push("/")
   }
 
   // ---- Permissions (kept as-is) ----

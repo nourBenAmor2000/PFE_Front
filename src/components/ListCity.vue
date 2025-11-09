@@ -1,181 +1,159 @@
 <template>
-  <div class="city-locations">    
-    <!-- Swiper Container -->
-    <div class="swiper-container">
-      <swiper
-        :slides-per-view="1"
-        :space-between="20"
-        :pagination="{clickable: true}"
-        :breakpoints="{
-          640: {
-            slidesPerView: 2,
-            spaceBetween: 20,
-          },
-          1024: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-        }"
-        :modules="modules"
-        class="city-swiper"
-      >
-        <swiper-slide v-for="city in cities" :key="city.id">
-          <div class="city-card" @click="navigateToCity(city.id)">
-            <!-- City Map Background -->
-            <div class="city-map">
-              <img :src="city.mapImage" :alt="`${city.name} map`" />
-              <div class="city-icon">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
+  <section class="py-10 sm:py-12">
+    <div class="mx-auto max-w-7xl px-4">
+      <!-- Tabs (pills) -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar">
+        <button
+          v-for="t in tabs"
+          :key="t.key"
+          @click="activeTab = t.key"
+          class="rounded-2xl px-5 py-2 text-sm font-medium shadow-sm transition-colors"
+          :class="activeTab === t.key
+            ? 'bg-white text-[var(--ink-strong)] ring-1 ring-black/5'
+            : 'bg-white/70 text-[var(--ink)] hover:bg-white'"
+        >
+          {{ t.label }}
+        </button>
+      </div>
+
+      <!-- Swiper + custom arrows -->
+      <div class="mt-6 relative">
+        <!-- Left / Right arrows -->
+        <button class="city-nav city-prev" aria-label="Précédent">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <button class="city-nav city-next" aria-label="Suivant">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <Swiper
+          class="city-swiper"
+          :modules="modules"
+          :slides-per-view="1"
+          :space-between="18"
+          :navigation="{ prevEl: '.city-prev', nextEl: '.city-next' }"
+          :keyboard="{ enabled: true }"
+          :breakpoints="{
+            640:  { slidesPerView: 2, spaceBetween: 20 },
+            860:  { slidesPerView: 3, spaceBetween: 22 },
+            1200: { slidesPerView: 4, spaceBetween: 24 },
+            1536: { slidesPerView: 5, spaceBetween: 26 }
+          }"
+        >
+          <SwiperSlide
+            v-for="city in visibleItems"
+            :key="city.id"
+          >
+            <article class="group relative h-[360px] overflow-hidden rounded-[28px] shadow-[0_10px_30px_rgba(0,0,0,.08)] ring-1 ring-black/5">
+              <!-- Image -->
+              <img
+                :src="city.mapImage"
+                :alt="city.name"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                loading="lazy"
+              />
+
+              <!-- Overlay gradient (bottom) -->
+              <div
+                class="pointer-events-none absolute inset-x-0 bottom-0 h-[55%]"
+                style="background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 35%, rgba(0,0,0,.65) 100%);"
+              />
+
+              <!-- Content -->
+              <div class="absolute inset-x-0 bottom-0 p-6">
+                <h3 class="text-white text-[28px] font-semibold drop-shadow-sm">
+                  {{ city.name }}
+                </h3>
+                <p class="mt-1 text-white/90 text-sm">
+                  {{ city.propertyCount }} {{ city.propertyCount === 1 ? 'propriété' : 'propriétés' }}
+                </p>
+
+                <button
+                  class="mt-4 inline-flex items-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-[var(--brand)]
+                         shadow-[0_6px_20px_rgba(0,0,0,.18)] ring-1 ring-black/5 transition-colors hover:bg-white/95"
+                  @click="navigateToCity(city.id)"
+                >
+                  En savoir plus
+                </button>
               </div>
-            </div>
-            
-            <!-- City Details -->
-            <div class="city-details">
-              <h3 class="city-name">{{ city.name }}</h3>
-              <p class="property-count">{{ city.propertyCount }} {{ city.propertyCount === 1 ? 'Property' : 'Properties' }}</p>
-            </div>
-          </div>
-        </swiper-slide>
-      </swiper>
+            </article>
+          </SwiperSlide>
+        </Swiper>
+      </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Pagination } from 'swiper/modules'
+import { Pagination, Navigation, Keyboard } from 'swiper/modules' // + Navigation, Keyboard
 import 'swiper/css'
 import 'swiper/css/navigation'
-import 'swiper/css/pagination'
 
-// Swiper modules
-const modules = [Pagination]
+/** Couleurs (capture) */
+onMounted(() => {
+  document.documentElement.style.setProperty('--brand', '#EF4445')   // orange/rouge
+  document.documentElement.style.setProperty('--ink', '#476072')
+  document.documentElement.style.setProperty('--ink-strong', '#2A3B46')
+})
 
-// City interface
-interface City {
-  id: number
-  name: string
-  propertyCount: number
-  mapImage: string
-}
+const modules = [Navigation, Keyboard] // plus besoin de Pagination
 
-// Mock city data
+type City = { id: number; name: string; propertyCount: number; mapImage: string }
+type Region = { id: number; name: string; propertyCount: number; mapImage: string }
+
+const tabs = [
+  { key: 'cities',  label: 'Principales Villes Tunisiennes' },
+  { key: 'regions', label: 'Régions Tunisiennes' }
+]
+const activeTab = ref<'cities' | 'regions'>('cities')
+
 const cities = ref<City[]>([
-  {
-    id: 1,
-    name: "Los Angeles",
-    propertyCount: 2,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 2,
-    name: "San Francisco",
-    propertyCount: 1,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 3,
-    name: "New York",
-    propertyCount: 10,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 4,
-    name: "Chicago",
-    propertyCount: 1,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 5,
-    name: "Miami",
-    propertyCount: 5,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 6,
-    name: "Seattle",
-    propertyCount: 3,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 7,
-    name: "Austin",
-    propertyCount: 7,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  },
-  {
-    id: 8,
-    name: "Denver",
-    propertyCount: 4,
-    mapImage: "https://images.pexels.com/photos/169647/pexels-photo-169647.jpeg"
-  }
+  { id: 1, name: 'Tunis',      propertyCount: 28, mapImage: 'https://images.pexels.com/photos/221436/pexels-photo-221436.jpeg' },
+  { id: 2, name: 'Hammamet',   propertyCount: 16, mapImage: 'https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg' },
+  { id: 3, name: 'Sousse',     propertyCount: 22, mapImage: 'https://images.pexels.com/photos/460376/pexels-photo-460376.jpeg' },
+  { id: 4, name: 'Monastir',   propertyCount: 12, mapImage: 'https://images.pexels.com/photos/417054/pexels-photo-417054.jpeg' },
+  { id: 5, name: 'Mahdia',     propertyCount: 9,  mapImage: 'https://images.pexels.com/photos/240665/pexels-photo-240665.jpeg' },
+  { id: 6, name: 'Nabeul',     propertyCount: 7,  mapImage: 'https://images.pexels.com/photos/221471/pexels-photo-221471.jpeg' }
 ])
 
-// Methods
-const navigateToCity = (cityId: number) => {
-  console.log(`Navigate to city ${cityId}`)
+const regions = ref<Region[]>([
+  { id: 101, name: 'Grand Tunis',  propertyCount: 44, mapImage: 'https://images.pexels.com/photos/132071/pexels-photo-132071.jpeg' },
+  { id: 102, name: 'Sahel',        propertyCount: 35, mapImage: 'https://images.pexels.com/photos/132037/pexels-photo-132037.jpeg' },
+  { id: 103, name: 'Cap Bon',      propertyCount: 19, mapImage: 'https://images.pexels.com/photos/274144/pexels-photo-274144.jpeg' },
+  { id: 104, name: 'Nord-Est',     propertyCount: 12, mapImage: 'https://images.pexels.com/photos/210205/pexels-photo-210205.jpeg' },
+  { id: 105, name: 'Centre',       propertyCount: 10, mapImage: 'https://images.pexels.com/photos/2101187/pexels-photo-2101187.jpeg' }
+])
+
+const visibleItems = computed(() => activeTab.value === 'cities' ? cities.value : regions.value)
+
+function navigateToCity(id: number) {
+  console.log('Navigate to item', id)
 }
 </script>
 
 <style scoped>
-.city-locations {
-  @apply py-16 px-4;
+/* Arrows style */
+.city-nav {
+  @apply absolute top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center
+         h-10 w-10 rounded-full bg-white text-[var(--brand)]
+         shadow-[0_8px_24px_rgba(0,0,0,.15)] ring-1 ring-black/5
+         transition hover:bg-white/95 hover:scale-105;
+}
+.city-prev { left: -6px; }     /* en dehors du flux pour respirer */
+.city-next { right: -6px; }
+
+@media (min-width: 768px) {
+  .city-prev { left: -12px; }
+  .city-next { right: -12px; }
 }
 
-.swiper-container {
-  @apply mt-12;
-}
-
-.city-swiper {
-  @apply pb-12;
-}
-
-.city-card {
-  @apply bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1;
-}
-
-.city-map {
-  @apply relative h-48;
-}
-
-.city-map img {
-  @apply w-full h-full object-cover;
-}
-
-.city-icon {
-  @apply absolute inset-0 flex items-center justify-center;
-}
-
-.city-icon svg {
-  @apply text-white bg-gray-900 bg-opacity-70 rounded-full p-3 w-16 h-16;
-}
-
-.city-details {
-  @apply p-6 text-center;
-}
-
-.city-name {
-  @apply text-xl font-bold text-gray-900 mb-2;
-}
-
-.property-count {
-  @apply text-gray-600 text-sm;
-}
-
-/* Swiper custom styles */
-:deep(.swiper-pagination-bullet) {
-  @apply bg-gray-400;
-}
-
-:deep(.swiper-pagination-bullet-active) {
-  @apply bg-red-500;
-}
-
-:deep(.swiper-button-next),
-:deep(.swiper-button-prev) {
-  @apply text-red-500;
-}
+/* Cache scrollbar horizontale onglets */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

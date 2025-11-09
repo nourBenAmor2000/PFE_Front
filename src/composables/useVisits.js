@@ -14,7 +14,7 @@ export const useVisits = defineStore('visits', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}api/visits`)
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/visits`)
         this.visits = response.data.data
       } catch (err) {
         console.error('Failed to fetch visits:', err.response?.data || err.message)
@@ -29,7 +29,7 @@ export const useVisits = defineStore('visits', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}api/visits`, payload)
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/visits`, payload)
         this.visits.push(response.data.data)
       } catch (err) {
         console.error('Failed to add visit:', err.response?.data || err.message)
@@ -44,7 +44,7 @@ export const useVisits = defineStore('visits', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/visits/${id}`, payload)
+        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/visits/${id}`, payload)
         const index = this.visits.findIndex(v => v.id === id)
         if (index !== -1) this.visits[index] = response.data.data
       } catch (err) {
@@ -60,7 +60,7 @@ export const useVisits = defineStore('visits', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}api/visits/${id}`)
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/visits/${id}`)
         this.visits = this.visits.filter(v => v.id !== id)
       } catch (err) {
         console.error('Failed to delete visit:', err.response?.data || err.message)

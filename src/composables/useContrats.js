@@ -14,7 +14,7 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}api/contracts`)
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts`)
         this.contracts = response.data.data
       } catch (err) {
         console.error('Failed to fetch contracts:', err.response?.data || err.message)
@@ -39,7 +39,7 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}api/contracts`, payload)
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts`, payload)
         this.contracts.push(response.data.data)
       } catch (err) {
         console.error('Failed to add contract:', err.response?.data || err.message)
@@ -54,7 +54,7 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/contracts/${id}`, payload)
+        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts/${id}`, payload)
         const index = this.contracts.findIndex(c => c.id === id)
         if (index !== -1) this.contracts[index] = response.data.data
       } catch (err) {
@@ -70,7 +70,7 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}api/contracts/${id}`)
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts/${id}`)
         this.contracts = this.contracts.filter(c => c.id !== id)
       } catch (err) {
         console.error('Failed to delete contract:', err.response?.data || err.message)

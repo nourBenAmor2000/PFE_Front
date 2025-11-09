@@ -1,9 +1,20 @@
 <template>
   <!-- Sticky, translucent header with subtle border and scroll-aware shadow -->
   <header
+  
     class="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-teal-50 supports-[backdrop-filter]:bg-white/60"
     :class="{ 'shadow-sm': scrolled }"
   >
+  <teleport to="body">
+    <LoginModal
+      v-model:open="loginOpen"
+      @switch-to-register="openRegister"
+    />
+    <RegisterModal
+      v-model:open="registerOpen"
+      @switch-to-login="openLogin"
+    />
+  </teleport>
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-18 lg:h-20 items-center justify-between gap-4">
         <!-- Logo / Brand -->
@@ -116,14 +127,16 @@
             </template>
 
             <!-- Logged out -->
-            <router-link
-              v-else
-              to="/login"
-              class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <Icon name="user" class="h-5 w-5" />
-              <span>Se connecter</span>
-            </router-link>
+            <button
+  v-else
+  type="button"
+  @click="openLogin()"
+  class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+>
+  <Icon name="user" class="h-5 w-5" />
+  <span>Se connecter</span>
+</button>
+
           </div>
 
           <!-- Burger (Mobile) -->
@@ -188,15 +201,16 @@
                 <span>Déconnexion</span>
               </button>
             </template>
-            <router-link
-              v-else
-              to="/login"
-              class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50"
-              @click="closeMobileMenu"
-            >
-              <Icon name="user" class="h-5 w-5" />
-              <span>Se connecter</span>
-            </router-link>
+            <button
+  v-else
+  type="button"
+  class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-teal-50"
+  @click="() => { closeMobileMenu(); openLogin(); }"
+>
+  <Icon name="user" class="h-5 w-5" />
+  <span>Se connecter</span>
+</button>
+
           </div>
         </nav>
       </aside>
@@ -278,8 +292,21 @@ const handleLogout = () => { logout(); userMenuOpen.value = false; mobileMenuOpe
 
 <!-- Local components: Icon, AppNavLink, MobileLink -->
 <script lang="ts">
+import RegisterModal from '@/components/RegisterModal.vue'
+
+const registerOpen = ref(false)
+
+const openRegister = () => { loginOpen.value = false; registerOpen.value = true }
+
 import { defineComponent, h, computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import LoginModal from '@/components/LoginModal.vue'
+
+
+
+
+const loginOpen = ref(false)
+const openLogin = () => { loginOpen.value = true }
 
 const paths: Record<string, string> = {
   briefcase: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',

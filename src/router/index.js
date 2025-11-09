@@ -40,6 +40,7 @@ import AgenciesView from "../views/Agencies/AgenciesView.vue"
 import EditAdminView from "../views/Admin/EditAdminView.vue"
 import AddAdminView from "../views/Admin/AddAdminView.vue"
 import AdminView from "../views/Admin/AdminView.vue"
+import EditAgentView from "@/views/Agents/EditAgentView.vue"
 
 const routes = [
   {
@@ -176,7 +177,7 @@ const routes = [
 {
   path: "/admin/agents/edit/:id",
   name: "EditAgentView",
-  component: EditCategoryView,
+  component: EditAgentView,
   meta: { requiresAuth: true, requiredRole: "admin" },
   props: true,
 },
@@ -210,13 +211,13 @@ const routes = [
   meta: { requiresAuth: true, requiredRole: "admin" },
 },
 {
-  path: "/admin/clients/add",
+  path: "/clients/add",
   name: "AddClientView",
   component: AddClientView,
   meta: { requiresAuth: true, requiredRole: "admin" },
 },
 {
-  path: "/admin/clients/edit/:id",
+  path: "/clients/edit/:id",
   name: "EditClientView",
   component: EditClientView,
   meta: { requiresAuth: true, requiredRole: "admin" },

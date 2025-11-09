@@ -14,7 +14,7 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}api/admins`)
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin`)
         this.admins = response.data.data
       } catch (err) {
         console.error('Failed to fetch admins:', err.response?.data || err.message)
@@ -33,7 +33,7 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}api/admins`, payload)
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin`, payload)
         this.admins.push(response.data.data)
       } catch (err) {
         console.error('Failed to add admin:', err.response?.data || err.message)
@@ -48,7 +48,7 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}api/admins/${id}`, payload)
+        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/${id}`, payload)
         const index = this.admins.findIndex(a => a.id === id)
         if (index !== -1) this.admins[index] = response.data.data
       } catch (err) {
@@ -64,7 +64,7 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}api/admins/${id}`)
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/${id}`)
         this.admins = this.admins.filter(a => a.id !== id)
       } catch (err) {
         console.error('Failed to delete admin:', err.response?.data || err.message)

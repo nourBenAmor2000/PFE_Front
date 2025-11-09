@@ -10,24 +10,27 @@
       />
       <ListHouse />
       
-      <SectionHeaderMenu 
-        :title="'Explore Cities'"  
-        :subtitle="'Aliquam lacinia diam quis lacus euismod'"
-        :linkText="'All Cities'"
+     <SectionHeaderMenu
+        :title="'Villes & Régions de Tunisie'"
+        :subtitle="'Parcourez les principales villes et régions pour votre prochain bien'"
+        :linkText="'Voir toutes les localités'"
         :linkHref="'/cities'"
       />
       <ListCity />
+
       
       <MainHelp />
       <Testimonials />
       
       <SectionHeaderMenu 
-        :title="'Our Exclusive Agents'"  
+        :title="'Nos Agents Exclusifs'"
         :subtitle="'Aliquam lacinia diam quis lacus euismod'"
-        :linkText="'See All Agents'"
+        :linkText="'Voir tous les agents'"
         :linkHref="'/agents'"
       />
-      <ListAgents />
+
+<ListAgents />
+
       
       <PubPart />
     </div>
