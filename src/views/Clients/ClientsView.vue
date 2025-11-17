@@ -1,375 +1,392 @@
-<script setup>
-import { onMounted, ref, computed } from 'vue'
-import { useClients } from '@/composables/useClient'
-import { useRouter } from 'vue-router'
-import Button from '@/components/ui/button/Button.vue'
-import Table from '@/components/ui/table/Table.vue'
-import TableHead from '@/components/ui/table/TableHead.vue'
-import TableRow from '@/components/ui/table/TableRow.vue'
-import TableCell from '@/components/ui/table/TableCell.vue'
-import TableBody from '@/components/ui/table/TableBody.vue'
-import AdminLayout from '@/layouts/AdminLayout.vue'
-import Input from '@/components/ui/input/Input.vue'
-import { 
-  Plus, 
-  Search, 
-  Users, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Edit, 
-  Trash2,
-  Download,
-  Filter,
-  MoreHorizontal
-} from 'lucide-vue-next'
-
-const clientStore = useClients()
-const router = useRouter()
-const searchQuery = ref('')
-const currentPage = ref(1)
-const itemsPerPage = ref(10)
-
-onMounted(() => clientStore.fetchClients())
-
-const deleteClient = async (id) => {
-  if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-    await clientStore.deleteClient(id)
-  }
-}
-
-// Computed properties for pagination and filtering
-const filteredClients = computed(() => {
-  if (!searchQuery.value) return clientStore.clients
-  
-  const query = searchQuery.value.toLowerCase()
-  return clientStore.clients.filter(client => 
-    client.name?.toLowerCase().includes(query) ||
-    client.email?.toLowerCase().includes(query) ||
-    client.phone?.includes(query) ||
-    client.address?.toLowerCase().includes(query)
-  )
-})
-
-const paginatedClients = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return filteredClients.value.slice(start, end)
-})
-
-const totalPages = computed(() => {
-  return Math.ceil(filteredClients.value.length / itemsPerPage.value)
-})
-
-const pageNumbers = computed(() => {
-  const pages = []
-  const total = totalPages.value
-  const current = currentPage.value
-  
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) {
-      pages.push(i)
-    }
-  } else {
-    if (current <= 4) {
-      for (let i = 1; i <= 5; i++) pages.push(i)
-      pages.push('...')
-      pages.push(total)
-    } else if (current >= total - 3) {
-      pages.push(1)
-      pages.push('...')
-      for (let i = total - 4; i <= total; i++) pages.push(i)
-    } else {
-      pages.push(1)
-      pages.push('...')
-      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
-      pages.push('...')
-      pages.push(total)
-    }
-  }
-  return pages
-})
-
-function goToPage(page) {
-  if (page !== '...' && page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-function previousPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
-}
-
-function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
-}
-</script>
-
 <template>
   <AdminLayout>
     <div class="p-6 space-y-6">
-      <!-- Header Section -->
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Client Management</h1>
-          <p class="text-gray-600 mt-2">Manage your clients and their information</p>
+      <!-- Header / Breadcrumb + Actions -->
+      <section class="bg-white rounded-2xl border shadow-sm p-5">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <nav class="text-sm text-gray-500 mb-1">
+              <span class="hover:text-gray-700 cursor-default">Home</span>
+              <span class="mx-2">›</span>
+              <span class="text-orange-600 font-medium">Clients</span>
+            </nav>
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 grid place-items-center text-white">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2m4 0h14v-2H7v2m0 6h14v-2H7v2M3 19h2v-2H3v2M7 5v2h14V5H7M3 7h2V5H3v2Z"/></svg>
+              </div>
+              <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900">Clients</h1>
+                <p class="text-gray-600">Manage your clients and their information</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              class="hidden sm:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+              @click="refresh"
+              :disabled="isBusy"
+              title="Refresh"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v7h-7"/></svg>
+              Refresh
+            </button>
+            <a
+              href="/clients/add"
+              class="inline-flex items-center gap-2 rounded-lg bg-orange-600 text-white px-4 py-2 font-medium hover:bg-orange-700"
+            >
+              <Plus class="w-4 h-4" />
+              Add New Client
+            </a>
+          </div>
         </div>
-        <a href="/clients/add" class="flex items-center gap-2">
-          <Plus class="w-4 h-4" />
-          Add New Client
-        </a>
-      </div>
+      </section>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg border p-6 shadow-sm">
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl border shadow-sm p-5">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-blue-100 rounded-lg">
+            <div class="p-2.5 bg-blue-50 rounded-lg">
               <Users class="w-6 h-6 text-blue-600" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-600">Total Clients</p>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Clients</p>
               <p class="text-2xl font-bold text-gray-900">{{ clientStore.clients.length }}</p>
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-lg border p-6 shadow-sm">
+        <div class="bg-white rounded-xl border shadow-sm p-5">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-green-100 rounded-lg">
+            <div class="p-2.5 bg-green-50 rounded-lg">
               <Mail class="w-6 h-6 text-green-600" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-600">Active Contacts</p>
-              <p class="text-2xl font-bold text-gray-900">{{ clientStore.clients.length }}</p>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">With Email</p>
+              <p class="text-2xl font-bold text-gray-900">{{ withEmail }}</p>
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-lg border p-6 shadow-sm">
+        <div class="bg-white rounded-xl border shadow-sm p-5">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-purple-100 rounded-lg">
+            <div class="p-2.5 bg-purple-50 rounded-lg">
               <Phone class="w-6 h-6 text-purple-600" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-600">With Phone</p>
-              <p class="text-2xl font-bold text-gray-900">{{ clientStore.clients.filter(c => c.phone).length }}</p>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">With Phone</p>
+              <p class="text-2xl font-bold text-gray-900">{{ withPhone }}</p>
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-lg border p-6 shadow-sm">
-          <div class="flex items-center gap-3">
-            <div class="p-2 bg-orange-100 rounded-lg">
-              <MapPin class="w-6 h-6 text-orange-600" />
-            </div>
-            <div>
-              <p class="text-sm font-medium text-gray-600">With Address</p>
-              <p class="text-2xl font-bold text-gray-900">{{ clientStore.clients.filter(c => c.address).length }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <!-- Clients Table Section -->
-      <div class="bg-white rounded-lg border shadow-sm overflow-hidden">
-        <!-- Table Header with Search and Filters -->
-        <div class="p-6 border-b">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="relative w-full sm:w-auto">
-              <Search class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                v-model="searchQuery"
-                placeholder="Search clients..."
-                class="pl-10 w-full sm:w-80"
+      <!-- Table Card -->
+      <section class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <!-- Toolbar -->
+        <div class="p-4 border-b flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Clients</h2>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <!-- Search -->
+            <div class="flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2">
+              <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/>
+              </svg>
+              <input
+                v-model.trim="q"
+                @input="onQuery"
+                type="text"
+                placeholder="Search by name, email, phone…"
+                class="ml-2 bg-transparent text-sm outline-none placeholder:text-gray-400 w-56"
               />
             </div>
-            <div class="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" class="flex items-center gap-2">
-                <Filter class="w-4 h-4" />
-                Filter
-              </Button>
-              <Button variant="outline" class="flex items-center gap-2">
-                <Download class="w-4 h-4" />
-                Export
-              </Button>
+
+            <!-- Filters -->
+            <select v-model="status" @change="applyFilters" class="rounded-lg border-gray-200 text-sm">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            <select v-model="segment" @change="applyFilters" class="rounded-lg border-gray-200 text-sm">
+              <option value="">All Segments</option>
+              <option value="buyer">Buyer</option>
+              <option value="seller">Seller</option>
+              <option value="renter">Renter</option>
+            </select>
+
+            <!-- Bulk actions -->
+            <div class="flex items-center gap-2">
+              <button
+                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+                :disabled="selectedIds.length === 0"
+                @click="bulkDeactivate"
+              >
+                Deactivate
+              </button>
+              <button
+                class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm hover:bg-red-100 disabled:opacity-50"
+                :disabled="selectedIds.length === 0"
+                @click="bulkDelete"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Table -->
-        <Table>
-          <TableHead class="bg-gray-50">
-            <TableRow>
-              <TableHead class="font-semibold text-gray-900">Client</TableHead>
-              <TableHead class="font-semibold text-gray-900">Contact</TableHead>
-              <TableHead class="font-semibold text-gray-900">Address</TableHead>
-              <TableHead class="font-semibold text-gray-900 text-right">Actions</TableHead>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow v-for="client in paginatedClients" :key="client._id" class="hover:bg-gray-50 transition-colors">
-              <TableCell>
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <Users class="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p class="font-medium text-gray-900">{{ client.name }}</p>
-                    <p class="text-sm text-gray-500">Client ID: {{ client._id }}</p>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <Mail class="w-4 h-4 text-gray-400" />
-                    <span class="text-gray-600">{{ client.email || 'No email' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Phone class="w-4 h-4 text-gray-400" />
-                    <span class="text-gray-600 text-sm">{{ client.phone || 'No phone' }}</span>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div class="flex items-center gap-2 max-w-xs">
-                  <MapPin class="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span class="text-gray-600 truncate">{{ client.address || 'No address provided' }}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div class="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    @click="router.push(`/clients/edit/${client._id}`)"
-                    class="flex items-center gap-2"
-                  >
-                    <Edit class="w-4 h-4" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    @click="deleteClient(client._id)"
-                    class="flex items-center gap-2"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                    Delete
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <div class="overflow-x-auto">
+          <Table>
+            <TableHeader class="bg-gray-50">
+              <TableRow>
+                <TableHead class="w-10">
+                  <input type="checkbox" :checked="allSelected" @change="toggleAll" />
+                </TableHead>
+                <TableHead class="font-semibold text-gray-900">Client</TableHead>
+                <TableHead class="font-semibold text-gray-900">Contact</TableHead>
+                <TableHead class="font-semibold text-gray-900">Address</TableHead>
+                <TableHead class="font-semibold text-gray-900">Status</TableHead>
+                <TableHead class="font-semibold text-gray-900 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
 
-        <!-- Empty State -->
-        <div v-if="filteredClients.length === 0" class="text-center py-12">
-          <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Users class="w-10 h-10 text-gray-400" />
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No clients found</h3>
-          <p class="text-gray-500 mb-6" v-if="searchQuery">
-            No clients match your search criteria. Try adjusting your search terms.
-          </p>
-          <p class="text-gray-500 mb-6" v-else>
-            Get started by adding your first client to the system.
-          </p>
-          <Button @click="router.push('/clients/add')" class="flex items-center gap-2 mx-auto">
-            <Plus class="w-4 h-4" />
-            Add New Client
-          </Button>
+            <TableBody v-if="!isBusy && filtered.length">
+              <TableRow
+                v-for="c in paged"
+                :key="c._id"
+                class="hover:bg-gray-50 transition-colors"
+              >
+                <TableCell>
+                  <input type="checkbox" :value="c._id" v-model="selectedIds" />
+                </TableCell>
+
+                <TableCell>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full grid place-items-center">
+                      <Users class="w-5 h-5 text-white" />
+                    </div>
+                    <div class="min-w-0">
+                      <p class="font-medium text-gray-900 truncate">{{ c.name || '—' }}</p>
+                      <p class="text-xs text-gray-500">ID: {{ c._id }}</p>
+                    </div>
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <Mail class="w-4 h-4 text-gray-400" />
+                      <span class="text-gray-700 truncate">{{ c.email || 'No email' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Phone class="w-4 h-4 text-gray-400" />
+                      <span class="text-gray-600 text-sm">{{ c.phone || 'No phone' }}</span>
+                    </div>
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  <div class="flex items-center gap-2 max-w-xs">
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>
+                    <span class="text-gray-600 truncate">{{ c.address || 'No address' }}</span>
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  <div class="inline-flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full" :class="c.active !== false ? 'bg-green-500' : 'bg-gray-300'"></span>
+                    <span
+                      class="px-2 py-1 rounded-full text-xs font-medium"
+                      :class="c.active !== false ? 'text-green-700 bg-green-50' : 'text-gray-700 bg-gray-100'"
+                    >
+                      {{ c.active !== false ? 'Active' : 'Inactive' }}
+                    </span>
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  <div class="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      class="flex items-center gap-2"
+                      @click="router.push(`/clients/edit/${c._id}`)"
+                    >
+                      <Edit class="w-4 h-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      class="flex items-center gap-2"
+                      @click="deleteClient(c._id)"
+                    >
+                      <Trash2 class="w-4 h-4" />
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+
+            <!-- Loading skeleton -->
+            <TableBody v-else-if="isBusy">
+              <TableRow v-for="n in 5" :key="n">
+                <TableCell colspan="6">
+                  <div class="h-10 animate-pulse bg-gray-100 rounded-md"></div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+
+            <!-- Empty state -->
+            <TableBody v-else>
+              <TableRow>
+                <TableCell colspan="6">
+                  <div class="text-center py-12">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full grid place-items-center mx-auto mb-4">
+                      <Users class="w-9 h-9 text-gray-400" />
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-1">No clients found</h3>
+                    <p class="text-gray-500 mb-6">Get started by adding your first client.</p>
+                    <a href="/clients/add" class="inline-flex items-center gap-2 rounded-lg bg-orange-600 text-white px-4 py-2 font-medium hover:bg-orange-700">
+                      <Plus class="w-4 h-4" />
+                      Add New Client
+                    </a>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
 
-        <!-- Pagination -->
-        <div v-if="filteredClients.length > 0" class="px-6 py-4 border-t">
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="text-sm text-gray-600">
-              Showing {{ ((currentPage - 1) * itemsPerPage) + 1 }} to 
-              {{ Math.min(currentPage * itemsPerPage, filteredClients.length) }} of 
-              {{ filteredClients.length }} results
-            </div>
-            
-            <div class="flex items-center gap-2">
-              <!-- Previous Button -->
-              <Button
-                variant="outline"
-                size="sm"
-                :disabled="currentPage === 1"
-                @click="previousPage"
-                class="flex items-center gap-1"
-              >
-                Previous
-              </Button>
-
-              <!-- Page Numbers -->
-              <div class="flex gap-1">
-                <Button
-                  v-for="page in pageNumbers"
-                  :key="page"
-                  variant="outline"
-                  size="sm"
-                  :class="[
-                    'min-w-10',
-                    page === currentPage 
-                      ? 'bg-blue-600 text-white border-blue-600' 
-                      : 'text-gray-700',
-                    page === '...' && 'cursor-default hover:bg-transparent'
-                  ]"
-                  @click="goToPage(page)"
-                  :disabled="page === '...'"
-                >
-                  {{ page }}
-                </Button>
-              </div>
-
-              <!-- Next Button -->
-              <Button
-                variant="outline"
-                size="sm"
-                :disabled="currentPage === totalPages"
-                @click="nextPage"
-                class="flex items-center gap-1"
-              >
-                Next
-              </Button>
-            </div>
-
-            <!-- Items Per Page Selector -->
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600">Show</span>
-              <select 
-                v-model="itemsPerPage" 
-                class="border rounded px-2 py-1 text-sm"
-                @change="currentPage = 1"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-              </select>
-              <span class="text-sm text-gray-600">per page</span>
-            </div>
+        <!-- Footer / Pagination -->
+        <div class="border-t px-4 py-3 flex items-center justify-between text-sm">
+          <p class="text-gray-600">
+            Showing <span class="font-semibold">{{ from }}</span>–<span class="font-semibold">{{ to }}</span> of
+            <span class="font-semibold">{{ filtered.length }}</span>
+          </p>
+          <div class="flex items-center gap-2">
+            <button class="rounded-lg border px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50" :disabled="page===1" @click="page--">Previous</button>
+            <button class="rounded-lg border px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50" :disabled="page>=pages" @click="page++">Next</button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </AdminLayout>
 </template>
 
+<script setup>
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import AdminLayout from '@/layouts/AdminLayout.vue'
+import { useClients } from '@/composables/useClient'
+
+import Button from '@/components/ui/button/Button.vue'
+import Table from '@/components/ui/table/Table.vue'
+import TableHeader from '@/components/ui/table/TableHeader.vue'
+import TableHead from '@/components/ui/table/TableHead.vue'
+import TableRow from '@/components/ui/table/TableRow.vue'
+import TableCell from '@/components/ui/table/TableCell.vue'
+import TableBody from '@/components/ui/table/TableBody.vue'
+
+import { Plus, Users, Mail, Phone, Edit, Trash2 } from 'lucide-vue-next'
+
+const clientStore = useClients()
+const router = useRouter()
+
+const isBusy = ref(false)
+
+/* filters / search / selection */
+const q = ref('')
+const status = ref('')
+const segment = ref('')
+const selectedIds = ref([])
+
+/* pagination */
+const page = ref(1)
+const perPage = ref(8)
+
+/* KPIs */
+const withEmail = computed(() => clientStore.clients.filter(c => !!c.email).length)
+const withPhone = computed(() => clientStore.clients.filter(c => !!c.phone).length)
+
+/* filtered list */
+const filtered = computed(() => {
+  const s = q.value.toLowerCase()
+  return clientStore.clients
+    .filter(c => (status.value ? (status.value === 'active' ? c.active !== false : c.active === false) : true))
+    .filter(c => (segment.value ? (c.segment === segment.value) : true))
+    .filter(c => {
+      if (!s) return true
+      return (c.name || '').toLowerCase().includes(s)
+          || (c.email || '').toLowerCase().includes(s)
+          || (c.phone || '').toLowerCase?.().includes(s)
+          || (c.address || '').toLowerCase().includes(s)
+          || (c._id || '').toLowerCase().includes(s)
+    })
+})
+
+/* pagination helpers */
+const pages = computed(() => Math.max(1, Math.ceil(filtered.value.length / perPage.value)))
+const paged  = computed(() => {
+  const start = (page.value - 1) * perPage.value
+  return filtered.value.slice(start, start + perPage.value)
+})
+const from   = computed(() => (filtered.value.length ? (page.value - 1) * perPage.value + 1 : 0))
+const to     = computed(() => Math.min(page.value * perPage.value, filtered.value.length))
+
+watch([q, status, segment, perPage], () => { page.value = 1 })
+
+/* selection helpers */
+const allSelected = computed(() => selectedIds.value.length && paged.value.every(i => selectedIds.value.includes(i._id)))
+const toggleAll = (e) => {
+  const ids = paged.value.map(i => i._id)
+  if (e.target.checked) selectedIds.value = Array.from(new Set([...selectedIds.value, ...ids]))
+  else selectedIds.value = selectedIds.value.filter(id => !ids.includes(id))
+}
+
+/* actions */
+const refresh = async () => {
+  isBusy.value = true
+  await clientStore.fetchClients()
+  isBusy.value = false
+}
+const deleteClient = async (id) => {
+  if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+    await clientStore.deleteClient(id)
+    selectedIds.value = selectedIds.value.filter(x => x !== id)
+  }
+}
+const bulkDelete = async () => {
+  if (!selectedIds.value.length) return
+  if (confirm(`Delete ${selectedIds.value.length} client(s)?`)) {
+    for (const id of selectedIds.value) {
+      await clientStore.deleteClient(id)
+    }
+    selectedIds.value = []
+  }
+}
+const bulkDeactivate = async () => {
+  if (!selectedIds.value.length) return
+  for (const id of selectedIds.value) {
+    const c = clientStore.clients.find(x => x._id === id)
+    if (c && clientStore.updateClient) await clientStore.updateClient(id, { active: false })
+  }
+  selectedIds.value = []
+}
+
+const onQuery = () => {}
+const applyFilters = () => {}
+
+/* fetch on mount */
+onMounted(async () => {
+  isBusy.value = true
+  await clientStore.fetchClients()
+  isBusy.value = false
+})
+</script>
+
 <style scoped>
-/* Custom styles for better visual hierarchy */
-:deep(.table) {
-  border-radius: 0.5rem;
-}
-
-:deep(.table-header) {
-  background-color: #f9fafb;
-}
-
-:deep(.table-row:hover) {
-  background-color: #f8fafc;
-}
+:deep(.table-header) { background-color: #f9fafb; }
+:deep(th), :deep(td) { vertical-align: middle; }
 </style>

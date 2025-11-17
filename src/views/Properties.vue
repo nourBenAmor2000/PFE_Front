@@ -93,7 +93,8 @@
         </div>
 
         <!-- Map view -->
-        <div v-if="viewMode==='map'" class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+         
+        <div v-if="viewMode==='map'" class="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
           <aside class="lg:col-span-1">
             <MapSearch ref="mapSearchRef" @search="handleMapSearch" @filters-changed="handleFiltersChanged" />
           </aside>

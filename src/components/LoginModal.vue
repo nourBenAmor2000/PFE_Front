@@ -231,19 +231,29 @@ onBeforeUnmount(() => {
 /* actions */
 const submit = async () => {
   error.value = ''
-  const res = await login({
-    email: form.value.email,
-    password: form.value.password,
-    rememberMe: form.value.remember
-  })
+  // ⬇️ si tu as un select pour le type, passe-le ici. Sinon, laisse "client" par défaut.
+  const roleType = form.value.roleType || 'client'
+
+  const res = await login(
+    {
+      email: form.value.email,
+      password: form.value.password,
+      rememberMe: form.value.remember,
+    },
+    roleType
+  )
+
   if (res?.success) {
-    emit('success')
-    close()
-    router.push('/dashboard')
+    // admin -> /dashboardadmin ; sinon /dashboard
+    const role = String(res?.user?.role || '').toLowerCase()
+    const isAdmin = role === 'admin_global' || role === 'admin_agence' || role === 'admin_agent'
+    const to = isAdmin ? '/admin' : '/dashboard'
+    emit('success'); close(); router.push(to)
   } else {
     error.value = res?.error || 'Échec de connexion. Veuillez réessayer.'
   }
 }
+
 
 const social = (provider: string) => {
   // TODO: impl. auth sociale

@@ -23,14 +23,15 @@
           class="group inline-flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-xl"
           aria-label="Aller à l’accueil"
         >
-          <img
-            src="/assets/images/logo.png"
-            alt="Logo Homez"
-            class="h-10 w-auto transition-transform duration-200 group-hover:scale-[1.02]"
-          />
-          <span class="hidden sm:inline-block text-xl font-semibold tracking-tight text-gray-900">
-            homez
-          </span>
+        <img
+          src="/assets/images/logo.png"
+          alt="Logo Homez"
+          class="h-20 w-auto transition-transform duration-300 hover:scale-110"
+        >
+
+          <!-- <span class="hidden sm:inline-block text-xl font-semibold tracking-tight text-gray-900">
+            E-DAR
+          </span> -->
         </router-link>
 
         <!-- Primary Nav (Desktop) -->
