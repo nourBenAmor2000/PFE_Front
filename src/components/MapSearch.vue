@@ -255,9 +255,33 @@ onBeforeUnmount(() => {
 })
 
 /* ===== Actions ===== */
-const searchByLocation = () => {
+const searchByLocation = async () => {
   if (!searchLocation.value) return
-  emit('search', { location: searchLocation.value, filters: { ...filters } })
+  // Try to geocode the location first
+  try {
+    const { geocodingService } = await import('@/services/geocoding')
+    const geocoded = await geocodingService.geocode(searchLocation.value)
+    if (geocoded) {
+      // Use geocoded coordinates
+      flyTo(geocoded.lat, geocoded.lng, 12)
+      emit('search', { 
+        location: searchLocation.value,
+        bounds: map?.getBounds() ? {
+          north: map.getBounds().getNorth(),
+          south: map.getBounds().getSouth(),
+          east: map.getBounds().getEast(),
+          west: map.getBounds().getWest()
+        } : undefined,
+        filters: { ...filters } 
+      })
+    } else {
+      // Fallback to text search
+      emit('search', { location: searchLocation.value, filters: { ...filters } })
+    }
+  } catch (error) {
+    console.error('Geocoding error:', error)
+    emit('search', { location: searchLocation.value, filters: { ...filters } })
+  }
 }
 
 const searchArea = () => {

@@ -27,18 +27,19 @@
         </div>
         
         <div class="space-y-4">
-          <div>
-              <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-              <input
-                id="username"
-                v-model="form.username"
-                name="username"
-                type="text"
-                required
-                class="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Username"
-              />
-            </div>
+          <!-- Username field (only for clients) -->
+          <div v-if="!showAgentFields">
+            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+            <input
+              id="username"
+              v-model="form.username"
+              name="username"
+              type="text"
+              :required="!showAgentFields"
+              class="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+              placeholder="Username"
+            />
+          </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="firstName" class="block text-sm font-medium text-gray-700">First name</label>
@@ -109,6 +110,46 @@
             </select>
           </div>
           
+          <!-- Agency selection (only for agents) -->
+          <div v-if="showAgentFields">
+            <label for="agency_id" class="block text-sm font-medium text-gray-700">Agency *</label>
+            <select
+              id="agency_id"
+              v-model="form.agency_id"
+              name="agency_id"
+              :required="showAgentFields"
+              class="mt-1 block w-full px-3 py-3 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="">Select an agency</option>
+              <option
+                v-for="agency in agencies"
+                :key="agency._id || agency.id"
+                :value="agency._id || agency.id"
+              >
+                {{ agency.name }} {{ agency.city ? `(${agency.city})` : '' }}
+              </option>
+            </select>
+            <p v-if="agencies.length === 0" class="mt-1 text-xs text-gray-500">
+              No agencies available. Please contact administrator.
+            </p>
+          </div>
+          
+          <!-- Agent role selection (only for agents) -->
+          <div v-if="showAgentFields">
+            <label for="agent_role" class="block text-sm font-medium text-gray-700">Agent Role *</label>
+            <select
+              id="agent_role"
+              v-model="form.agent_role"
+              name="agent_role"
+              :required="showAgentFields"
+              class="mt-1 block w-full px-3 py-3 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="agent">Agent Personnel</option>
+              <option value="rh">RH (Human Resources)</option>
+              <option value="admin_agence">Admin Agence</option>
+            </select>
+          </div>
+          
           <div>
             <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
             <input
@@ -174,12 +215,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useAgencies } from '@/composables/useAgencies'
 
 const router = useRouter()
 const { register, isLoading } = useAuth()
+const agenciesStore = useAgencies()
 
 const form = ref({
   username: '',
@@ -188,12 +231,28 @@ const form = ref({
   email: '',
   phone: '',
   role: '',
+  agency_id: '',
+  agent_role: 'agent', // Default agent role
   password: '',
   confirmPassword: '',
   agreeTerms: false
 })
 
 const error = ref('')
+const agencies = ref([])
+
+// Load agencies when component mounts
+onMounted(async () => {
+  try {
+    await agenciesStore.fetchAgencies()
+    agencies.value = agenciesStore.agencies || []
+  } catch (err) {
+    console.error('Failed to load agencies:', err)
+  }
+})
+
+// Show agency and agent role fields only when role is 'agent'
+const showAgentFields = computed(() => form.value.role === 'agent')
 
 const handleRegister = async () => {
   error.value = ''
@@ -209,19 +268,58 @@ const handleRegister = async () => {
     return
   }
   
-  const result = await register({
-    username: form.value.username,
-    name: `${form.value.firstName} ${form.value.lastName}`,
-    email: form.value.email,
-    phone: form.value.phone,
-    role: form.value.role,
-    password: form.value.password
-  })
+  // Determine user type based on role selection
+  const userType = form.value.role === 'agent' ? 'agent' : 'client'
+  
+  // Validation for agent registration
+  if (userType === 'agent') {
+    if (!form.value.agency_id) {
+      error.value = 'Please select an agency'
+      return
+    }
+    if (!form.value.agent_role) {
+      error.value = 'Please select an agent role'
+      return
+    }
+  }
+  
+  // Prepare registration data based on user type
+  const registrationData = userType === 'agent' 
+    ? {
+        name: `${form.value.firstName} ${form.value.lastName}`,
+        email: form.value.email,
+        phone: form.value.phone,
+        password: form.value.password,
+        password_confirmation: form.value.confirmPassword,
+        agency_id: form.value.agency_id,
+        role: form.value.agent_role // Use selected agent role
+      }
+    : {
+        username: form.value.username,
+        name: `${form.value.firstName} ${form.value.lastName}`,
+        email: form.value.email,
+        phone: form.value.phone,
+        password: form.value.password,
+        password_confirmation: form.value.confirmPassword
+      }
+  
+  const result = await register(registrationData, userType)
   
   if (result.success) {
-    router.push('/dashboard')
+    // IMPORTANT: Always redirect to email verification page
+    // User must verify email before accessing their account
+    // No auto-login after registration
+    router.push({ 
+      path: '/verify-email', 
+      query: { 
+        type: userType,
+        email: form.value.email,
+        message: result.message || 'Registration successful! Please check your email for the verification code.'
+      } 
+    })
   } else {
     error.value = result.error || 'Registration failed. Please try again.'
   }
 }
 </script>
+

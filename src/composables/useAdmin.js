@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import { useApi } from './useApi'
 
 export const useAdmins = defineStore('admins', {
   state: () => ({
@@ -14,11 +14,15 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin`)
-        this.admins = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('admins')
+        const response = await api.get(endpoint)
+        const data = extractData(response)
+        this.admins = Array.isArray(data) ? data : []
       } catch (err) {
         console.error('Failed to fetch admins:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch admins'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -28,16 +32,21 @@ export const useAdmins = defineStore('admins', {
     async addAdmin(payload) {
       /**
        * payload example:
-       * { name: 'Admin Name', username: 'adminuser', email: 'admin@example.com', phone: '12345678', password: 'secret', agency_id: '...' }
+       * { name: 'Admin Name', email: 'admin@example.com', password: 'secret', role: 'admin_global' }
        */
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin`, payload)
-        this.admins.push(response.data.data)
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('admins')
+        const response = await api.post(endpoint, payload)
+        const data = extractData(response)
+        this.admins.push(data)
+        return data
       } catch (err) {
         console.error('Failed to add admin:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to add admin'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -48,12 +57,19 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/${id}`, payload)
-        const index = this.admins.findIndex(a => a.id === id)
-        if (index !== -1) this.admins[index] = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('admins')
+        const response = await api.put(`${endpoint}/${id}`, payload)
+        const data = extractData(response)
+        const index = this.admins.findIndex(a => a._id === id || a.id === id)
+        if (index !== -1) {
+          this.admins[index] = data
+        }
+        return data
       } catch (err) {
         console.error('Failed to update admin:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to update admin'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -64,11 +80,14 @@ export const useAdmins = defineStore('admins', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/${id}`)
-        this.admins = this.admins.filter(a => a.id !== id)
+        const { api, getEndpoint } = useApi()
+        const endpoint = getEndpoint('admins')
+        await api.delete(`${endpoint}/${id}`)
+        this.admins = this.admins.filter(a => (a._id !== id && a.id !== id))
       } catch (err) {
         console.error('Failed to delete admin:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to delete admin'
+        throw err
       } finally {
         this.isLoading = false
       }

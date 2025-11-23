@@ -17,8 +17,14 @@ const router = useRouter()
 
 
 const submit = async () => {
-await categoryStore.addCategory(name.value)
-router.push('/categories')
+  try {
+    await categoryStore.addCategory(name.value)
+    router.push('/admin/categories')
+  } catch (error) {
+    const errorMsg = categoryStore.error || error.message || 'Erreur lors de la création'
+    alert('Erreur: ' + errorMsg)
+    console.error('Error creating category:', error)
+  }
 }
 </script>
 

@@ -42,6 +42,22 @@ import EditAdminView from "../views/Admin/EditAdminView.vue"
 import AddAdminView from "../views/Admin/AddAdminView.vue"
 import AdminView from "../views/Admin/AdminView.vue"
 import EditAgentView from "@/views/Agents/EditAgentView.vue"
+import AttributesView from "@/views/Attributes/AttributesView.vue"
+import AddAttributeView from "@/views/Attributes/AddAttributeView.vue"
+import EditAttributeView from "@/views/Attributes/EditAttributeView.vue"
+import ReviewsView from "@/views/Reviews/ReviewsView.vue"
+import AddReviewView from "@/views/Reviews/AddReviewView.vue"
+import EditReviewView from "@/views/Reviews/EditReviewView.vue"
+import PaymentContractsView from "@/views/PaymentContracts/PaymentContractsView.vue"
+import AddPaymentContractView from "@/views/PaymentContracts/AddPaymentContractView.vue"
+import EditPaymentContractView from "@/views/PaymentContracts/EditPaymentContractView.vue"
+
+
+
+
+
+
+
 
 const routes = [
   {
@@ -125,19 +141,19 @@ const routes = [
   path: "/admin/admins",
   name: "AdminView",
   component: AdminView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/admins/add",
   name: "AddAdminView",
   component: AddAdminView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/admins/edit/:id",
   name: "EditAdminView",
   component: EditAdminView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -146,19 +162,19 @@ const routes = [
   path: "/admin/agencies",
   name: "AgenciesView",
   component: AgenciesView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/agencies/add",
   name: "AddAgenciesView",
   component: AddAgenciesView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/agencies/edit/:id",
   name: "EditAgenciesView",
   component: EditAgenciesView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -167,19 +183,19 @@ const routes = [
   path: "/admin/agents",
   name: "AgentsView",
   component: AgentsView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/agents/add",
   name: "AddAgentView",
   component: () => AddAgentView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/agents/edit/:id",
   name: "EditAgentView",
   component: EditAgentView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -212,13 +228,13 @@ const routes = [
   meta: { requiresAuth: true, requiredRole: "admin" },
 },
 {
-  path: "/clients/add",
+  path: "/admin/clients/add",
   name: "AddClientView",
   component: AddClientView,
   meta: { requiresAuth: true, requiredRole: "admin" },
 },
 {
-  path: "/clients/edit/:id",
+  path: "/admin/clients/edit/:id",
   name: "EditClientView",
   component: EditClientView,
   meta: { requiresAuth: true, requiredRole: "admin" },
@@ -362,6 +378,90 @@ const routes = [
     component: () => import("../views/ManageAgencies.vue"),
     meta: { requiresAuth: true, requiredRole: "admin_global" },
   },
+
+// ===== ATTRIBUTES CRUD ROUTES =====
+{
+  path: "/admin/attributes",
+  name: "AttributesView",
+  component: AttributesView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/attributes/add",
+  name: "AddAttributeView",
+  component: AddAttributeView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/attributes/edit/:id",
+  name: "EditAttributeView",
+  component: EditAttributeView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== REVIEWS CRUD ROUTES =====
+{
+  path: "/admin/reviews",
+  name: "ReviewsView",
+  component: ReviewsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/reviews/add",
+  name: "AddReviewView",
+  component: AddReviewView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/reviews/edit/:id",
+  name: "EditReviewView",
+  component: EditReviewView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+
+// ===== PAYMENT CONTRACTS CRUD ROUTES =====
+{
+  path: "/admin/payment-contracts",
+  name: "PaymentContractsView",
+  component: PaymentContractsView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/payment-contracts/add",
+  name: "AddPaymentContractView",
+  component: AddPaymentContractView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+},
+{
+  path: "/admin/payment-contracts/edit/:id",
+  name: "EditPaymentContractView",
+  component: EditPaymentContractView,
+  meta: { requiresAuth: true, requiredRole: "admin" },
+  props: true,
+},
+ {
+  path: "/forgot-password",
+  name: "ForgotPassword",
+  component: () => import("../views/ForgotPassword.vue"),
+  meta: { requiresAuth: false }, // ✅ accessible sans login
+},
+
+{
+  path: "/reset-password",
+  name: "ResetPassword",
+  component: () => import("../views/ResetPassword.vue"),
+  meta: { requiresAuth: false }, // accessible sans login
+},
+
+
+  {
+  path: '/verify-email',
+  name: 'verify-email-code',
+  component: () => import('@/views/VerifyEmailCode.vue'),
+}
+
 
 ]
 

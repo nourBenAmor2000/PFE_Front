@@ -88,10 +88,17 @@ const avgPrice = computed(() => {
 })
 
 /* Actions */
-const goAdd = () => router.push('/logements/add')
-const goEdit = (id) => router.push(`/logements/edit/${id}`)
+const goAdd = () => router.push('/admin/logements/add')
+const goEdit = (id) => router.push(`/admin/logements/edit/${id}`)
 const deleteLogement = async (id) => {
-  if (confirm('Supprimer ce logement ?')) await logementStore.deleteLogement(id)
+  if (confirm('Supprimer ce logement ?')) {
+    try {
+      await logementStore.deleteLogement(id)
+      await logementStore.fetchLogements() // Reload after delete
+    } catch (error) {
+      alert('Erreur lors de la suppression: ' + (logementStore.error || error.message))
+    }
+  }
 }
 
 /* Helpers */

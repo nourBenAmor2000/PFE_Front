@@ -16,15 +16,32 @@ const categoryStore = useCategories()
 const name = ref('')
 
 
-onMounted(() => {
-const cat = categoryStore.categories.find(c => c._id === route.params.id)
-if (cat) name.value = cat.name
+onMounted(async () => {
+  try {
+    await categoryStore.fetchCategories()
+    const cat = categoryStore.categories.find(c => c._id === route.params.id || c.id === route.params.id)
+    if (cat) {
+      name.value = cat.name
+    } else {
+      alert('Catégorie non trouvée')
+      router.push('/admin/categories')
+    }
+  } catch (error) {
+    console.error('Error loading category:', error)
+    alert('Erreur lors du chargement: ' + (error.message || 'Erreur inconnue'))
+  }
 })
 
 
 const submit = async () => {
-await categoryStore.updateCategory(route.params.id, name.value)
-router.push('/categories')
+  try {
+    await categoryStore.updateCategory(route.params.id, name.value)
+    router.push('/admin/categories')
+  } catch (error) {
+    const errorMsg = categoryStore.error || error.message || 'Erreur lors de la mise à jour'
+    alert('Erreur: ' + errorMsg)
+    console.error('Error updating category:', error)
+  }
 }
 </script>
 

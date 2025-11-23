@@ -105,8 +105,10 @@
                 :center="mapCenter"
                 :zoom="mapZoom"
                 height="600px"
+                :auto-load="viewMode === 'map'"
                 @property-selected="handlePropertySelected"
                 @map-moved="handleMapMoved"
+                @properties-loaded="handlePropertiesLoaded"
               />
             </div>
           </div>
@@ -150,22 +152,26 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PropertyMap from '../components/PropertyMap.vue'
 import MapSearch from '../components/MapSearch.vue'
+import { useLogements } from '../composables/useLogements'
 
 /* ---------- Couleur de ta capture ---------- */
 onMounted(() => {
   document.documentElement.style.setProperty('--brand', '#EF4445')   // couleur principale
   document.documentElement.style.setProperty('--brand-600', '#E23D3E') // hover
   document.documentElement.style.setProperty('--brand-700', '#C93637') // active/texte
+  loadProperties()
 })
 
 const router = useRouter()
 const route = useRoute()
+const logementsStore = useLogements()
 
 const viewMode = ref(route.query.view || 'list')
-const mapCenter = ref([34.0522, -118.2437]) // LA
+const mapCenter = ref([36.8065, 10.1815]) // Tunis, Tunisia
 const mapZoom = ref(10)
 const mapSearchRef = ref(null)
 const mapFilters = ref({})
+const isLoading = ref(false)
 
 const searchQuery = ref(route.query.q || '')
 const selectedType = ref(route.query.type || '')
@@ -175,12 +181,41 @@ const sortBy = ref(route.query.sort || 'relevant')
 const page = ref(Number(route.query.page || 1))
 const pageSize = 9
 
-const properties = ref([
-  { id: 1, title: 'House on the Hollywood', address: '374 Johnson Ave', price: 4600, beds: 6, baths: 2, sqft: 200, status: 'For Sale', type: 'house', image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg', latitude: 34.0928, longitude: -118.3287, createdAt: '2025-09-12' },
-  { id: 2, title: 'Comfortable Villa Green', address: '178 Broadway, Brooklyn', price: 5800, beds: 9, baths: 3, sqft: 600, status: 'For Sale', type: 'villa', image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg', latitude: 34.0522, longitude: -118.2437, createdAt: '2025-10-22' },
-  { id: 3, title: 'Quality House For Sale', address: '873 Bedford Ave', price: 2500, beds: 10, baths: 2, sqft: 500, status: 'For Sale', type: 'house', image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg', latitude: 34.0195, longitude: -118.4912, createdAt: '2025-10-05' },
-  { id: 4, title: 'Luxury Downtown Apartment', address: '456 Park Avenue, Manhattan', price: 7200, beds: 3, baths: 2, sqft: 1200, status: 'For Rent', type: 'apartment', image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg', latitude: 34.0407, longitude: -118.2468, createdAt: '2025-08-29' }
-])
+const properties = ref([])
+
+// Load properties from API
+async function loadProperties() {
+  isLoading.value = true
+  try {
+    await logementsStore.searchLogements({
+      search: searchQuery.value || undefined,
+      free: selectedStatus.value === 'for-rent' ? true : undefined,
+      sort: sortBy.value === 'price-asc' ? 'price' : sortBy.value === 'price-desc' ? 'price' : 'title',
+      sort_dir: sortBy.value === 'price-desc' ? 'desc' : 'asc',
+      per_page: 100
+    })
+    // Transform logements to properties format
+    properties.value = logementsStore.logements.map(log => ({
+      id: log._id || log.id,
+      title: log.title,
+      address: log.location || '',
+      price: log.price,
+      beds: log.beds || 0,
+      baths: log.baths || 0,
+      sqft: log.surface || 0,
+      status: log.free ? 'For Rent' : 'For Sale',
+      type: log.type || 'house',
+      image: log.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg',
+      latitude: log.latitude,
+      longitude: log.longitude,
+      createdAt: log.created_at || log.createdAt
+    }))
+  } catch (error) {
+    console.error('Failed to load properties:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredProperties = computed(() => {
   const q = String(searchQuery.value).trim().toLowerCase()
@@ -229,23 +264,122 @@ function syncQuery() {
 }
 
 watch([viewMode, searchQuery, selectedType, selectedStatus, sortBy, page], syncQuery)
+watch([searchQuery, selectedType, selectedStatus], () => {
+  page.value = 1
+  loadProperties()
+})
 
-function triggerFilter() { page.value = 1 }
+function triggerFilter() { 
+  page.value = 1
+  loadProperties()
+}
 function onSubmitSearch() { triggerFilter() }
 
 function goToProperty(id) { router.push(`/properties/${id}`) }
 function handlePropertySelected(p) { goToProperty(p.id) }
 function handleMapMoved({ center, zoom }) { mapCenter.value = center; mapZoom.value = zoom }
-function handleMapSearch({ location, filters }) {
-  mapFilters.value = filters
-  const l = String(location || '').toLowerCase()
-  if (l.includes('hollywood'))      mapCenter.value = [34.0928, -118.3287]
-  else if (l.includes('downtown'))  mapCenter.value = [34.0522, -118.2437]
-  mapZoom.value = 12
+
+function handlePropertiesLoaded(loadedProperties) {
+  // Merge loaded properties with existing ones (avoid duplicates)
+  const existingIds = new Set(properties.value.map(p => p.id || p._id))
+  const newProperties = loadedProperties.filter(p => {
+    const id = p.id || p._id
+    return id && !existingIds.has(id)
+  })
+  
+  if (newProperties.length > 0) {
+    // Transform to properties format
+    const transformed = newProperties.map(prop => ({
+      id: prop.id || prop._id,
+      title: prop.title,
+      address: prop.address || prop.location || '',
+      price: prop.price || 0,
+      beds: 0,
+      baths: 0,
+      sqft: prop.surface || 0,
+      status: prop.free ? 'For Rent' : 'For Sale',
+      type: 'house',
+      image: prop.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg',
+      latitude: prop.lat || prop.latitude,
+      longitude: prop.lng || prop.longitude,
+      category: prop.category,
+      agency: prop.agency,
+      free: prop.free,
+      createdAt: new Date().toISOString()
+    }))
+    
+    properties.value = [...properties.value, ...transformed]
+    console.log(`✅ ${transformed.length} nouveau(x) logement(s) ajouté(s) à la liste depuis la carte`)
+  }
 }
+async function handleMapSearch({ location, bounds, filters }) {
+  isLoading.value = true
+  mapFilters.value = filters || {}
+  try {
+    const results = await logementsStore.mapSearch({
+      location: location,
+      bounds: bounds,
+      filters: filters || {}
+    })
+    
+    // Transform results to properties format
+    properties.value = results.map(prop => ({
+      id: prop.id,
+      title: prop.title,
+      address: prop.address,
+      price: prop.price,
+      beds: 0,
+      baths: 0,
+      sqft: 0,
+      status: prop.free ? 'For Rent' : 'For Sale',
+      type: 'house',
+      image: prop.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg',
+      latitude: prop.lat,
+      longitude: prop.lng,
+      createdAt: new Date().toISOString()
+    }))
+    
+    // Update map center if location provided
+    if (location && results.length > 0) {
+      const first = results[0]
+      if (first.lat && first.lng) {
+        mapCenter.value = [first.lat, first.lng]
+        mapZoom.value = 12
+      }
+    }
+    
+    // Update markers on map
+    if (mapSearchRef.value && results.length > 0) {
+      mapSearchRef.value.setProperties(results)
+      mapSearchRef.value.updateResultCount(results.length)
+    }
+  } catch (error) {
+    console.error('Map search failed:', error)
+  } finally {
+    isLoading.value = false
+    if (mapSearchRef.value) {
+      mapSearchRef.value.stopLoading()
+    }
+  }
+}
+
 function handleFiltersChanged(filters) {
   mapFilters.value = filters
-  if (mapSearchRef.value) mapSearchRef.value.updateResultCount(sortedProperties.value.length)
+  // Trigger search when filters change
+  if (mapSearchRef.value) {
+    const bounds = mapSearchRef.value.map?.getBounds()
+    if (bounds) {
+      handleMapSearch({
+        bounds: {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest()
+        },
+        filters: filters
+      })
+    }
+  }
 }
 
 function resetFilters() {

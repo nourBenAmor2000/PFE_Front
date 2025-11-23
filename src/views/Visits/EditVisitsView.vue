@@ -38,12 +38,21 @@ onMounted(async () => {
       logementStore.fetchLogements()
     ])
     
-    const v = visitStore.visits.find(v => v._id === route.params.id)
+    const v = visitStore.visits.find(v => v._id === route.params.id || v.id === route.params.id)
     if (v) {
-      visit.value = { ...v }
+      // Format date for datetime-local input
+      const visitDate = v.visit_date ? new Date(v.visit_date).toISOString().slice(0, 16) : ''
+      visit.value = { 
+        ...v,
+        visit_date: visitDate
+      }
+    } else {
+      alert('Visite non trouvée')
+      router.push('/admin/visits')
     }
   } catch (error) {
     console.error('Error loading data:', error)
+    alert('Erreur lors du chargement: ' + (error.message || 'Erreur inconnue'))
   } finally {
     isLoading.value = false
   }
@@ -52,9 +61,16 @@ onMounted(async () => {
 const submit = async () => {
   isSubmitting.value = true
   try {
-    await visitStore.updateVisit(route.params.id, visit.value)
-    router.push('/visits')
+    // Format date for backend (ISO string)
+    const payload = {
+      ...visit.value,
+      visit_date: visit.value.visit_date ? new Date(visit.value.visit_date).toISOString() : null
+    }
+    await visitStore.updateVisit(route.params.id, payload)
+    router.push('/admin/visits')
   } catch (error) {
+    const errorMsg = visitStore.error || error.message || 'Erreur lors de la mise à jour'
+    alert('Erreur: ' + errorMsg)
     console.error('Error updating visit:', error)
   } finally {
     isSubmitting.value = false
@@ -103,9 +119,9 @@ const isPastVisit = computed(() => {
       <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-          <Button 
+            <Button 
             variant="ghost" 
-            @click="router.push('/visits')" 
+            @click="router.push('/admin/visits')" 
             class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft :size="16" />
@@ -311,7 +327,7 @@ const isPastVisit = computed(() => {
                 <Button 
                   type="button"
                   variant="outline" 
-                  @click="router.push('/visits')"
+                  @click="router.push('/admin/visits')"
                   class="flex-1 flex items-center justify-center gap-2"
                   :disabled="isSubmitting"
                 >

@@ -47,8 +47,8 @@ onMounted(async () => {
 })
 
 /* helpers */
-const getClientName = (id) => clientStore.clients.find(c => c._id === id)?.name || '—'
-const getLogementTitle = (id) => logementStore.logements.find(l => l._id === id)?.title || '—'
+const getClientName = (id) => clientStore.clients.find(c => (c._id === id || c.id === id))?.name || '—'
+const getLogementTitle = (id) => logementStore.logements.find(l => (l._id === id || l.id === id))?.title || '—'
 const money = (v) => `${Number(v || 0).toLocaleString('fr-FR')} TND`
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '—')
 const contractStatus = (endDate) => (new Date(endDate) < new Date() ? 'expired' : 'active')
@@ -59,7 +59,12 @@ const statusBadge = (s) =>
 
 const deleteContract = async (id) => {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce contrat ? Cette action est irréversible.')) {
-    await contractStore.deleteContract(id)
+    try {
+      await contractStore.deleteContract(id)
+      await contractStore.fetchContracts() // Reload after delete
+    } catch (error) {
+      alert('Erreur lors de la suppression: ' + (contractStore.error || error.message))
+    }
   }
 }
 
@@ -146,7 +151,7 @@ const monthlyRevenue = computed(() => filtered.value.reduce((sum, c) => sum + Nu
           <div class="flex items-center gap-2">
             <Button
               class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-              @click="router.push('/contracts/add')"
+              @click="router.push('/admin/contracts/add')"
             >
               <Plus class="w-4 h-4" />
               Ajouter un contrat
@@ -256,7 +261,7 @@ const monthlyRevenue = computed(() => filtered.value.reduce((sum, c) => sum + Nu
           <p class="text-gray-500 mb-6">
             {{ q || status || dateFrom || dateTo ? 'Ajuste la recherche/les filtres.' : 'Commence par ajouter ton premier contrat.' }}
           </p>
-          <Button class="bg-orange-600 hover:bg-orange-700 text-white" @click="router.push('/contracts/add')">
+          <Button class="bg-orange-600 hover:bg-orange-700 text-white" @click="router.push('/admin/contracts/add')">
             Ajouter un contrat
           </Button>
         </div>
@@ -343,7 +348,7 @@ const monthlyRevenue = computed(() => filtered.value.reduce((sum, c) => sum + Nu
                 <TableCell class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center justify-center gap-2">
                     <Button variant="outline" size="sm" class="flex items-center gap-2 px-3 py-2 text-xs"
-                      @click="router.push(`/contracts/edit/${c._id}`)">
+                      @click="router.push(`/admin/contracts/edit/${c._id}`)">
                       <Edit :size="14" /> Modifier
                     </Button>
                     <Button variant="destructive" size="sm" class="flex items-center gap-2 px-3 py-2 text-xs"

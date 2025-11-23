@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import { useApi } from './useApi'
 
 export const useClients = defineStore('clients', {
   state: () => ({
@@ -9,29 +9,20 @@ export const useClients = defineStore('clients', {
   }),
 
   actions: {
-    // 🔐 Helper to get headers with token
-    getAuthHeaders() {
-      const token = localStorage.getItem('token')
-      return {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    },
-
     // ✅ Fetch all clients
     async fetchClients() {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/clients`,
-          this.getAuthHeaders()
-        )
-        this.clients = response.data.clients
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('clients')
+        const response = await api.get(endpoint)
+        const data = extractData(response)
+        this.clients = Array.isArray(data) ? data : []
       } catch (err) {
         console.error('Failed to fetch clients:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch clients'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -42,15 +33,16 @@ export const useClients = defineStore('clients', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/clients`,
-          payload,
-          this.getAuthHeaders()
-        )
-        this.clients.push(response.data.data)
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('clients')
+        const response = await api.post(endpoint, payload)
+        const data = extractData(response)
+        this.clients.push(data)
+        return data
       } catch (err) {
         console.error('Failed to add client:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to add client'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -61,16 +53,19 @@ export const useClients = defineStore('clients', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/clients/${id}`,
-          payload,
-          this.getAuthHeaders()
-        )
-        const index = this.clients.findIndex(c => c.id === id)
-        if (index !== -1) this.clients[index] = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('clients')
+        const response = await api.put(`${endpoint}/${id}`, payload)
+        const data = extractData(response)
+        const index = this.clients.findIndex(c => c._id === id || c.id === id)
+        if (index !== -1) {
+          this.clients[index] = data
+        }
+        return data
       } catch (err) {
         console.error('Failed to update client:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to update client'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -81,34 +76,32 @@ export const useClients = defineStore('clients', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/clients/${id}`,
-          this.getAuthHeaders()
-        )
-        this.clients = this.clients.filter(c => c._id !== id)
+        const { api, getEndpoint } = useApi()
+        const endpoint = getEndpoint('clients')
+        await api.delete(`${endpoint}/${id}`)
+        this.clients = this.clients.filter(c => (c._id !== id && c.id !== id))
       } catch (err) {
         console.error('Failed to delete client:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to delete client'
+        throw err
       } finally {
         this.isLoading = false
       }
     },
 
-    // ✅ Get client by ID (NEW)
+    // ✅ Get client by ID
     async getClientById(id) {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/clients/${id}`,
-          this.getAuthHeaders()
-        )
-
-        // Return only the client data
-        return response.data.data || response.data.client
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('clients')
+        const response = await api.get(`${endpoint}/${id}`)
+        const data = extractData(response)
+        return data
       } catch (err) {
         console.error('Failed to get client by ID:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to get client'
         throw err
       } finally {
         this.isLoading = false

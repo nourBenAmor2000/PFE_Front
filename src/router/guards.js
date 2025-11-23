@@ -6,21 +6,25 @@ export function setupRouteGuards(router) {
   router.beforeEach((to, from, next) => {
     const { isAuthenticated, hasPermission } = useAuth()
 
-    // Check if route requires authentication
-    if (to.meta.requiresAuth && !isAuthenticated.value) {
+    const loggedIn = isAuthenticated.value
+
+    // 1) Routes protégées
+    if (to.meta.requiresAuth && !loggedIn) {
       next("/login")
       return
     }
 
-    // Check role-based permissions
-    if (to.meta.requiredRole && !hasPermission(to.meta.requiredRole)) {
-      next("/unauthorized")
+    // 2) Routes réservées aux invités (login, register, forgot-password, verify-email)
+    if (to.meta.guestOnly && loggedIn) {
+      // tu peux faire plus sophistiqué (rediriger selon rôle),
+      // mais pour l'instant on renvoie vers le dashboard
+      next("/dashboard")
       return
     }
 
-    // Redirect authenticated users away from auth pages
-    if ((to.path === "/login" || to.path === "/register") && isAuthenticated.value) {
-      next("/dashboard")
+    // 3) Vérif des rôles
+    if (to.meta.requiredRole && !hasPermission(to.meta.requiredRole)) {
+      next("/unauthorized")
       return
     }
 

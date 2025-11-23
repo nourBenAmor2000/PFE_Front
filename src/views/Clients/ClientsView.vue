@@ -32,7 +32,7 @@
               Refresh
             </button>
             <a
-              href="/clients/add"
+              href="/admin/clients/add"
               class="inline-flex items-center gap-2 rounded-lg bg-orange-600 text-white px-4 py-2 font-medium hover:bg-orange-700"
             >
               <Plus class="w-4 h-4" />
@@ -210,7 +210,7 @@
                       variant="outline"
                       size="sm"
                       class="flex items-center gap-2"
-                      @click="router.push(`/clients/edit/${c._id}`)"
+                      @click="router.push(`/admin/clients/edit/${c._id}`)"
                     >
                       <Edit class="w-4 h-4" />
                       Edit
@@ -248,7 +248,7 @@
                     </div>
                     <h3 class="text-lg font-medium text-gray-900 mb-1">No clients found</h3>
                     <p class="text-gray-500 mb-6">Get started by adding your first client.</p>
-                    <a href="/clients/add" class="inline-flex items-center gap-2 rounded-lg bg-orange-600 text-white px-4 py-2 font-medium hover:bg-orange-700">
+                    <a href="/admin/clients/add" class="inline-flex items-center gap-2 rounded-lg bg-orange-600 text-white px-4 py-2 font-medium hover:bg-orange-700">
                       <Plus class="w-4 h-4" />
                       Add New Client
                     </a>
@@ -353,17 +353,27 @@ const refresh = async () => {
 }
 const deleteClient = async (id) => {
   if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-    await clientStore.deleteClient(id)
-    selectedIds.value = selectedIds.value.filter(x => x !== id)
+    try {
+      await clientStore.deleteClient(id)
+      await clientStore.fetchClients() // Reload after delete
+      selectedIds.value = selectedIds.value.filter(x => x !== id)
+    } catch (error) {
+      alert('Erreur lors de la suppression: ' + (clientStore.error || error.message))
+    }
   }
 }
 const bulkDelete = async () => {
   if (!selectedIds.value.length) return
   if (confirm(`Delete ${selectedIds.value.length} client(s)?`)) {
-    for (const id of selectedIds.value) {
-      await clientStore.deleteClient(id)
+    try {
+      for (const id of selectedIds.value) {
+        await clientStore.deleteClient(id)
+      }
+      await clientStore.fetchClients() // Reload after bulk delete
+      selectedIds.value = []
+    } catch (error) {
+      alert('Erreur lors de la suppression: ' + (clientStore.error || error.message))
     }
-    selectedIds.value = []
   }
 }
 const bulkDeactivate = async () => {

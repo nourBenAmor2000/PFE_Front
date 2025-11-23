@@ -81,8 +81,8 @@
       <!-- Input -->
       <div class="p-4 border-t bg-gradient-to-r from-white to-purple-50/30">
         <div class="flex gap-2">
-          <input ref="inputRef" v-model="inputValue" :disabled="isLoading" @keydown.enter.prevent="send()" class="flex-1 border-2 border-purple-200 focus:border-purple-400 bg-white/90 backdrop-blur-sm rounded px-3 py-2" :placeholder="placeholder" />
-          <button :disabled="!inputValue.trim() || isLoading" @click="send" class="px-4 rounded text-white shadow-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+          <input ref="inputRef" v-model="inputValue" :disabled="isLoading" @keydown.enter.prevent="send()" class="flex-1 border-2 border-purple-200 focus:border-purple-400 bg-white/90 backdrop-blur-sm rounded px-3 py-2" :placeholder="placeholder" data-chat-input />
+          <button :disabled="!inputValue.trim() || isLoading" @click="send" class="px-4 rounded text-white shadow-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" data-chat-send>
             <span v-if="isLoading" class="animate-spin">⏳</span>
             <span v-else>➤</span>
           </button>
@@ -147,7 +147,15 @@ const autoSpeak = ref(false)
 const endRef = ref<HTMLDivElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
 
-const placeholder = 'Posez-moi des questions (clients, visites, logements, facturation...)'
+const placeholder = computed(() => {
+  const userStr = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null
+  const user = userStr ? JSON.parse(userStr) : null
+  const isAdminGlobal = user?.role === 'admin_global'
+  
+  return isAdminGlobal
+    ? 'Posez-moi des questions (statistiques, agences, agents, revenus, contrats...)'
+    : 'Posez-moi des questions (clients, visites, logements, facturation...)'
+})
 
 const providerLabel = computed(()=> provider.value==='openrouter' ? 'OpenRouter' : 'Gemini')
 const userCount = computed(()=> messages.value.filter(m=>m.role==='user').length)
@@ -160,13 +168,27 @@ watch(()=>[props.isOpen, isMinimized.value], ()=>{ if(props.isOpen && !isMinimiz
 
 onMounted(()=>{
   if(messages.value.length===0){
+    // Check if user is admin global
+    const userStr = localStorage.getItem('user')
+    const user = userStr ? JSON.parse(userStr) : null
+    const isAdminGlobal = user?.role === 'admin_global'
+    
     const welcome: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: `Bonjour ${props.userName || '👋'} ! Je suis votre assistant intelligent.\n\nJe peux :\n• Retrouver des infos (clients, logements, visites)\n• Analyser les réservations / paiements\n• Générer des résumés et stats\n• Suggérer des actions\n\nQue souhaitez‑vous savoir ?`,
+      content: isAdminGlobal 
+        ? `Bonjour ${props.userName || 'Administrateur'} ! 👋\n\nJe suis votre assistant IA pour l'administration globale.\n\nJe peux vous aider avec :\n• 📊 Statistiques globales (agences, agents, clients)\n• 💰 Analyse financière et revenus\n• 📝 Gestion des contrats et paiements\n• 🏢 Performance des agences\n• 👥 Gestion des agents et clients\n• 📈 Rapports et analyses détaillées\n\nQue souhaitez-vous analyser ?`
+        : `Bonjour ${props.userName || '👋'} ! Je suis votre assistant intelligent.\n\nJe peux :\n• Retrouver des infos (clients, logements, visites)\n• Analyser les réservations / paiements\n• Générer des résumés et stats\n• Suggérer des actions\n\nQue souhaitez‑vous savoir ?`,
       timestamp: new Date(),
       confidence: 1,
-      suggestions: [
+      suggestions: isAdminGlobal ? [
+        "Statistiques globales du système",
+        'Performance des agences',
+        'Revenus totaux ce mois-ci',
+        'Agents les plus performants',
+        'Contrats en attente de signature',
+        'Analyse des paiements',
+      ] : [
         "Résumé des visites d'aujourd'hui",
         'Clients sans numéro de téléphone',
         'Logements disponibles ce mois‑ci',
@@ -230,10 +252,23 @@ function onSuggestion(s:string){ inputValue.value = s; setTimeout(()=> send(), 1
 function copy(t:string){ navigator.clipboard.writeText(t) }
 function clearChat(){
   messages.value = []
+  const userStr = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null
+  const user = userStr ? JSON.parse(userStr) : null
+  const isAdminGlobal = user?.role === 'admin_global'
+  
   const welcome: ChatMessage = {
-    id: crypto.randomUUID(), role:'assistant', timestamp: new Date(), confidence:1,
-    content: `Bonjour ${props.userName || ''}! Comment puis‑je aider ?`,
-    suggestions: ["Visites d'aujourd'hui", 'Nouveaux clients cette semaine']
+    id: crypto.randomUUID(), 
+    role:'assistant', 
+    timestamp: new Date(), 
+    confidence:1,
+    content: isAdminGlobal
+      ? `Bonjour ${props.userName || 'Administrateur'} ! Comment puis‑je vous aider avec l'administration globale ?`
+      : `Bonjour ${props.userName || ''}! Comment puis‑je aider ?`,
+    suggestions: isAdminGlobal ? [
+      "Statistiques globales du système",
+      'Performance des agences',
+      'Revenus totaux ce mois-ci',
+    ] : ["Visites d'aujourd'hui", 'Nouveaux clients cette semaine']
   }
   messages.value = [welcome]
 }

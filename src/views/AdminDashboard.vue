@@ -1,7 +1,5 @@
 <template>
-
   <AdminLayout>
-    
     <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
       <!-- Header -->
       <header class="bg-white/90 dark:bg-gray-900/70 backdrop-blur border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
@@ -13,7 +11,6 @@
             <div>
               <h1 class="text-lg font-semibold text-gray-900 dark:text-white leading-tight">Admin Dashboard</h1>
               <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Monitor, moderate, and manage your platform</p>
-              
             </div>
             <nav class="ml-5 hidden md:flex text-xs text-gray-500 dark:text-gray-400 items-center gap-2">
               <span class="hover:text-gray-700 dark:hover:text-gray-200 transition">Home</span>
@@ -27,6 +24,17 @@
               <input v-model.trim="keyword" type="text" placeholder="Search…" class="peer w-64 pl-9 pr-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none transition"/>
               <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 peer-focus:text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
             </div>
+            <!-- AI Assistant Button -->
+            <button 
+              @click="showAIAssistant = !showAIAssistant" 
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition relative"
+              title="AI Assistant"
+            >
+              <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3l7 4v6c0 5-7 8-7 8s-7-3-7-8V7l7-4z"/>
+              </svg>
+              <span v-if="!showAIAssistant" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-purple-500 animate-pulse"></span>
+            </button>
             <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition relative" @click="toggleTheme">
               <svg v-if="!isDark" class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414m12.728 0l-1.414-1.414M7.05 7.05 5.636 5.636"/></svg>
               <svg v-else class="w-5 h-5 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -55,7 +63,6 @@
               </div>
             </template>
           </StatCard>
-
           <StatCard
             title="Active Properties"
             :value="stats.activeProperties"
@@ -66,7 +73,6 @@
               </div>
             </template>
           </StatCard>
-
           <StatCard
             title="Pending Contracts"
             :value="stats.pendingContracts"
@@ -77,7 +83,6 @@
               </div>
             </template>
           </StatCard>
-
           <StatCard
             title="Monthly Revenue"
             :value="formatCurrency(stats.monthlyRevenue)"
@@ -88,6 +93,49 @@
               </div>
             </template>
           </StatCard>
+        </section>
+
+        <!-- Quick AI Actions -->
+        <section v-if="!showAIAssistant" class="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-4">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3l7 4v6c0 5-7 8-7 8s-7-3-7-8V7l7-4z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">AI Assistant</h3>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Get instant insights about your system</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button
+                @click="quickAIQuery('Combien d\'utilisateurs dans le système?')"
+                class="px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 transition"
+              >
+                📊 Stats utilisateurs
+              </button>
+              <button
+                @click="quickAIQuery('Propriétés en attente d\'approbation')"
+                class="px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 transition"
+              >
+                🏠 Propriétés en attente
+              </button>
+              <button
+                @click="quickAIQuery('Revenus du mois')"
+                class="px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 transition"
+              >
+                💰 Revenus mensuels
+              </button>
+              <button
+                @click="showAIAssistant = true"
+                class="px-4 py-1.5 text-xs rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-md transition"
+              >
+                Ouvrir Assistant
+              </button>
+            </div>
+          </div>
         </section>
 
         <!-- Tabs -->
@@ -137,7 +185,6 @@
               </button>
             </div>
           </div>
-
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
               <thead class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300">
@@ -215,7 +262,6 @@
               </div>
             </div>
           </div>
-
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <article v-for="p in filteredProperties" :key="p.id" class="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-lg transition">
               <div class="relative">
@@ -238,156 +284,133 @@
               </div>
             </article>
           </div>
-
           <div v-if="!filteredProperties.length" class="text-center text-gray-500 dark:text-gray-400 py-16">No properties found.</div>
         </section>
 
-      <!-- ANALYTICS -->
-<section v-else-if="activeTab === 'analytics'" class="space-y-6">
-
-  <!-- Revenue Analytics -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-    <div class="flex items-start justify-between gap-4">
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white">Revenue Analytics</h3>
-      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-        • Live last 6 months
-      </span>
-    </div>
-
-    <div class="mt-4">
-      <!-- Bars + values -->
-      <div class="relative h-64">
-        <!-- subtle grid -->
-        <div class="absolute inset-0 pointer-events-none">
-          <div class="h-full w-full [background:repeating-linear-gradient(to_top,transparent_0,transparent_23px,rgba(148,163,184,0.12)_24px)] dark:[background:repeating-linear-gradient(to_top,transparent_0,transparent_23px,rgba(100,116,139,0.18)_24px)] rounded-xl"></div>
-        </div>
-
-        <div class="relative h-full grid content-end">
-          <div class="flex items-end gap-3 h-56">
-            <div
-              v-for="(m,i) in revenueBars"
-              :key="i"
-              class="group relative flex-1 min-w-[10px]"
-            >
-              <!-- value bubble -->
-              <div
-                class="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-2 py-0.5 rounded-md bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow"
-              >
-                {{ m }}%
+        <!-- ANALYTICS -->
+        <section v-else-if="activeTab === 'analytics'" class="space-y-6">
+          <!-- Revenue Analytics -->
+          <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
+            <div class="flex items-start justify-between gap-4">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Revenue Analytics</h3>
+              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                • Live last 6 months
+              </span>
+            </div>
+            <div class="mt-4">
+              <div class="relative h-64">
+                <div class="absolute inset-0 pointer-events-none">
+                  <div class="h-full w-full [background:repeating-linear-gradient(to_top,transparent_0,transparent_23px,rgba(148,163,184,0.12)_24px)] dark:[background:repeating-linear-gradient(to_top,transparent_0,transparent_23px,rgba(100,116,139,0.18)_24px)] rounded-xl"></div>
+                </div>
+                <div class="relative h-full grid content-end">
+                  <div class="flex items-end gap-3 h-56">
+                    <div
+                      v-for="(m,i) in revenueBars"
+                      :key="i"
+                      class="group relative flex-1 min-w-[10px]"
+                    >
+                      <div
+                        class="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-2 py-0.5 rounded-md bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow"
+                      >
+                        {{ m }}%
+                      </div>
+                      <div
+                        class="w-full rounded-t-lg bg-gradient-to-t from-orange-600 to-rose-500 shadow-[inset_0_-1px_0_rgba(255,255,255,.25)] transition-all duration-300"
+                        :style="{ height: Math.max(0, Math.min(100, m)) + '%' }"
+                        :aria-label="`Revenue bar ${last6Months[i]}: ${m}%`"
+                        role="img"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 grid grid-cols-6 gap-3">
+                    <span
+                      v-for="(l,i) in last6Months"
+                      :key="i"
+                      class="text-center truncate"
+                    >
+                      {{ l }}
+                    </span>
+                  </div>
+                </div>
               </div>
-
-              <!-- bar -->
-              <div
-                class="w-full rounded-t-lg bg-gradient-to-t from-orange-600 to-rose-500 shadow-[inset_0_-1px_0_rgba(255,255,255,.25)] transition-all duration-300"
-                :style="{ height: Math.max(0, Math.min(100, m)) + '%' }"
-                :aria-label="`Revenue bar ${last6Months[i]}: ${m}%`"
-                role="img"
-              ></div>
             </div>
           </div>
 
-          <!-- months labels -->
-          <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 grid grid-cols-6 gap-3">
-            <span
-              v-for="(l,i) in last6Months"
-              :key="i"
-              class="text-center truncate"
-            >
-              {{ l }}
-            </span>
+          <!-- User Growth + Property Performance -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- User Growth -->
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
+              <div class="flex items-start justify-between">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">User Growth</h3>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Goal: 5k users</span>
+              </div>
+              <div class="mt-4 space-y-4">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-600 dark:text-gray-300">Progress</span>
+                  <span class="font-semibold text-gray-900 dark:text-white">{{ userGrowth }}%</span>
+                </div>
+                <div class="h-3 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-gradient-to-r from-orange-600 to-rose-500 transition-all"
+                    :style="{ width: Math.max(0, Math.min(100, userGrowth)) + '%' }"
+                    aria-label="User growth progress"
+                    role="img"
+                  ></div>
+                </div>
+                <div class="mt-2">
+                  <svg viewBox="0 0 100 24" class="w-full h-10">
+                    <polyline
+                      :points="sparkPoints"
+                      fill="url(#g)"
+                      stroke="currentColor"
+                      class="text-orange-600/70 dark:text-orange-400/80"
+                      stroke-width="1.5"
+                    />
+                    <defs>
+                      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="currentColor" stop-opacity="0.18"/>
+                        <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Property Performance -->
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Property Performance</h3>
+              <ul class="space-y-3">
+                <li
+                  v-for="kpi in propertyKPIs"
+                  :key="kpi.label"
+                  class="flex items-center justify-between gap-4"
+                >
+                  <div class="min-w-0">
+                    <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ kpi.label }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span
+                      v-if="kpi.trend"
+                      :class="[
+                        'px-1.5 py-0.5 rounded-md text-[11px] font-medium',
+                        kpi.trend > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                       : 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                      ]"
+                      :aria-label="`Trend ${kpi.trend > 0 ? 'up' : 'down'} ${Math.abs(kpi.trend)}%`"
+                    >
+                      {{ kpi.trend > 0 ? '+' : '−' }}{{ Math.abs(kpi.trend) }}%
+                    </span>
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ kpi.value }}</span>
+                  </div>
+                </li>
+              </ul>
+              <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                KPIs based on last 30 days activity.
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- User Growth + Property Performance -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    <!-- User Growth -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-      <div class="flex items-start justify-between">
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">User Growth</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">Goal: 5k users</span>
-      </div>
-
-      <div class="mt-4 space-y-4">
-        <!-- KPI row -->
-        <div class="flex items-center justify-between text-sm">
-          <span class="text-gray-600 dark:text-gray-300">Progress</span>
-          <span class="font-semibold text-gray-900 dark:text-white">{{ userGrowth }}%</span>
-        </div>
-
-        <!-- progress bar -->
-        <div class="h-3 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
-          <div
-            class="h-full rounded-full bg-gradient-to-r from-orange-600 to-rose-500 transition-all"
-            :style="{ width: Math.max(0, Math.min(100, userGrowth)) + '%' }"
-            aria-label="User growth progress"
-            role="img"
-          ></div>
-        </div>
-
-        <!-- tiny sparkline (pure SVG) -->
-        <div class="mt-2">
-          <svg viewBox="0 0 100 24" class="w-full h-10">
-            <polyline
-              :points="sparkPoints"
-              fill="url(#g)"
-              stroke="currentColor"
-              class="text-orange-600/70 dark:text-orange-400/80"
-              stroke-width="1.5"
-            />
-            <defs>
-              <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="currentColor" stop-opacity="0.18"/>
-                <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Property Performance -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Property Performance</h3>
-
-      <!-- KPI list with badges -->
-      <ul class="space-y-3">
-        <li
-          v-for="kpi in propertyKPIs"
-          :key="kpi.label"
-          class="flex items-center justify-between gap-4"
-        >
-          <div class="min-w-0">
-            <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ kpi.label }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span
-              v-if="kpi.trend"
-              :class="[
-                'px-1.5 py-0.5 rounded-md text-[11px] font-medium',
-                kpi.trend > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                               : 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
-              ]"
-              :aria-label="`Trend ${kpi.trend > 0 ? 'up' : 'down'} ${Math.abs(kpi.trend)}%`"
-            >
-              {{ kpi.trend > 0 ? '+' : '−' }}{{ Math.abs(kpi.trend) }}%
-            </span>
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ kpi.value }}</span>
-          </div>
-        </li>
-      </ul>
-
-      <!-- Optional hint -->
-      <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-        KPIs based on last 30 days activity.
-      </p>
-    </div>
-  </div>
-</section>
-
+        </section>
 
         <!-- SETTINGS -->
         <section v-else-if="activeTab === 'settings'" class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -426,6 +449,16 @@
         </section>
       </main>
     </div>
+
+    <!-- AI Assistant Chat -->
+    <ChatAssistant
+      ref="chatAssistantRef"
+      :is-open="showAIAssistant"
+      :on-toggle="() => showAIAssistant = !showAIAssistant"
+      :user-name="user?.name || user?.email || 'Administrateur'"
+      :user-id="user?._id || user?.id || 'admin'"
+      class="fixed bottom-4 right-4 z-50"
+    />
   </AdminLayout>
 </template>
 
@@ -433,6 +466,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import { useAuth } from '@/composables/useAuth'
+import ChatAssistant from '@/components/ChatAssistant.vue'
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /* state                                                                      */
@@ -440,9 +474,10 @@ import { useAuth } from '@/composables/useAuth'
 const { user } = useAuth()
 const isDark = ref(false)
 const keyword = ref('')
-
 const activeTab = ref('users')
 const showAddUserModal = ref(false)
+const showAIAssistant = ref(false)
+const chatAssistantRef = ref(null)
 
 const tabs = [
   { id: 'users', name: 'Users' },
@@ -508,7 +543,18 @@ const last6Months = computed(() => {
 })
 
 const revenueBars = computed(() => [35, 52, 44, 60, 72, 80])
+
 const userGrowth = computed(() => 62)
+
+const sparkPoints = computed(() => {
+  const points = []
+  for (let i = 0; i <= 100; i += 5) {
+    const y = 20 + Math.sin(i / 10) * 8
+    points.push(`${i},${y}`)
+  }
+  return points.join(' ')
+})
+
 const propertyKPIs = computed(() => [
   { label: 'Avg. Time to Approval', value: '12h 30m' },
   { label: 'Conversion Rate', value: '8.6%' },
@@ -538,13 +584,17 @@ const getPropertyStatusClass = (status) => ({
 }[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300')
 
 const formatDate = (s) => new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+
 const formatCurrency = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(n || 0))
 
 const editUser = (u) => console.log('Edit user', u.id)
+
 const toggleUserStatus = (u) => u.status = (u.status === 'active' ? 'inactive' : 'active')
+
 const deleteUser = (u) => { if (confirm(`Delete ${u.name}?`)) users.value = users.value.filter(x => x.id !== u.id) }
 
 const approveProperty = (p) => p.status = 'active'
+
 const editProperty = (p) => console.log('Edit property', p.id)
 
 const saveSettings = () => {
@@ -555,6 +605,26 @@ const toggleTheme = () => {
   isDark.value = !isDark.value
   const root = document.documentElement
   if (isDark.value) root.classList.add('dark'); else root.classList.remove('dark')
+}
+
+// Quick AI Query helper
+const quickAIQuery = (query) => {
+  showAIAssistant.value = true
+  // Wait for component to mount, then trigger query
+  setTimeout(() => {
+    const chatInput = document.querySelector('[data-chat-input]')
+    if (chatInput) {
+      chatInput.value = query
+      chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+      // Trigger send after a short delay
+      setTimeout(() => {
+        const sendButton = document.querySelector('[data-chat-send]')
+        if (sendButton && !sendButton.disabled) {
+          sendButton.click()
+        }
+      }, 100)
+    }
+  }, 500)
 }
 
 onMounted(() => {

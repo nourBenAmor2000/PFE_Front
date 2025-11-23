@@ -6,6 +6,7 @@ import { Plus, Search, Edit, Trash2, Building2, Phone, MapPin, User } from 'luci
 
 import Button from '@/components/ui/button/Button.vue'
 import Table from '@/components/ui/table/Table.vue'
+import TableHeader from '@/components/ui/table/TableHeader.vue'
 import TableHead from '@/components/ui/table/TableHead.vue'
 import TableRow from '@/components/ui/table/TableRow.vue'
 import TableCell from '@/components/ui/table/TableCell.vue'
@@ -44,105 +45,152 @@ const filteredAgencies = computed(() => {
 
 <template>
   <AdminLayout>
-    <div class="min-h-screen bg-gray-50 p-6">
-      <div class="max-w-7xl mx-auto">
-        <!-- Header Section -->
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
-          <div class="flex-1">
+    <div class="p-6 space-y-6">
+      <!-- Header / Breadcrumb + Actions -->
+      <section class="bg-white rounded-2xl border shadow-sm p-5">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <nav class="text-sm text-gray-500 mb-1">
+              <span class="hover:text-gray-700 cursor-default">Home</span>
+              <span class="mx-2">›</span>
+              <span class="text-orange-600 font-medium">Agences</span>
+            </nav>
             <div class="flex items-center gap-3">
-              <Building2 :size="32" class="text-blue-600" />
+              <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 grid place-items-center text-white">
+                <Building2 class="w-5 h-5" />
+              </div>
               <div>
-                <h1 class="text-3xl font-bold text-gray-900">Gestion des Agences</h1>
-                <p class="text-gray-600 mt-1">Gérez toutes les agences de votre système</p>
+                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900">Gestion des agences</h1>
+                <p class="text-gray-600">Gérez toutes les agences de votre système</p>
               </div>
             </div>
           </div>
           
           <Button 
-            variant="primary" 
-            @click="router.push('/agencies/add')" 
-            class="flex items-center gap-2 whitespace-nowrap"
+            class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+            @click="router.push('/admin/agencies/add')"
           >
-            <Plus :size="18" />
-            Ajouter une Agence
+            <Plus class="w-4 h-4" />
+            Ajouter une agence
           </Button>
         </div>
+      </section>
 
-        <!-- Controls Section -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div class="relative flex-1 max-w-md">
-            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" :size="20" />
-            <input 
-              v-model="searchQuery"
-              type="text" 
-              placeholder="Rechercher une agence..." 
-              class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
-          </div>
-          
-          <div class="flex items-center">
-            <span class="text-sm text-gray-600 font-medium">
-              {{ filteredAgencies.length }} agence(s) trouvée(s)
-            </span>
+      <!-- Stats Cards -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl border shadow-sm p-5">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-blue-50 rounded-lg">
+              <Building2 class="w-6 h-6 text-blue-600" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Agences</p>
+              <p class="text-2xl font-bold text-gray-900">{{ filteredAgencies.length }}</p>
+            </div>
           </div>
         </div>
+        <div class="bg-white rounded-xl border shadow-sm p-5">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-green-50 rounded-lg">
+              <Phone class="w-6 h-6 text-green-600" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Avec téléphone</p>
+              <p class="text-2xl font-bold text-gray-900">{{ filteredAgencies.filter(a => a.phone).length }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border shadow-sm p-5">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-purple-50 rounded-lg">
+              <MapPin class="w-6 h-6 text-purple-600" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Villes uniques</p>
+              <p class="text-2xl font-bold text-gray-900">{{ new Set(filteredAgencies.map(a => a.city).filter(Boolean)).size }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <!-- Table Section -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <!-- Table Card -->
+      <section class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <!-- Toolbar -->
+        <div class="p-4 border-b flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Agences</h2>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <!-- Search -->
+            <div class="relative">
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Rechercher une agence..." 
+                class="pl-9 w-72 rounded-lg border border-gray-200 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+        </div>
           <!-- Loading State -->
           <div v-if="isLoading" class="flex flex-col items-center justify-center py-12">
             <div class="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mb-4"></div>
             <p class="text-gray-600">Chargement des agences...</p>
           </div>
 
-          <!-- Empty States -->
-          <div v-else-if="filteredAgencies.length === 0 && searchQuery" class="flex flex-col items-center justify-center py-12 px-4">
-            <Building2 :size="56" class="text-gray-400 mb-4" />
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Aucune agence trouvée</h3>
-            <p class="text-gray-600 text-center mb-6 max-w-sm">
-              Aucune agence ne correspond à votre recherche "{{ searchQuery }}"
-            </p>
-            <Button variant="outline" @click="searchQuery = ''" class="flex items-center gap-2">
-              Effacer la recherche
-            </Button>
+        <!-- Empty States -->
+        <div v-else-if="filteredAgencies.length === 0 && searchQuery" class="text-center py-12 px-4">
+          <div class="w-20 h-20 bg-gray-100 rounded-full grid place-items-center mx-auto mb-4">
+            <Search class="w-9 h-9 text-gray-400" />
           </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">Aucune agence trouvée</h3>
+          <p class="text-gray-500 mb-6">
+            Aucune agence ne correspond à votre recherche "{{ searchQuery }}"
+          </p>
+          <Button variant="outline" @click="searchQuery = ''" class="flex items-center gap-2">
+            Effacer la recherche
+          </Button>
+        </div>
 
-          <div v-else-if="filteredAgencies.length === 0" class="flex flex-col items-center justify-center py-12 px-4">
-            <Building2 :size="56" class="text-gray-400 mb-4" />
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Aucune agence</h3>
-            <p class="text-gray-600 text-center mb-6">Commencez par ajouter votre première agence</p>
-            <Button variant="primary" @click="router.push('/agencies/add')" class="flex items-center gap-2">
-              <Plus :size="18" />
-              Ajouter une agence
-            </Button>
+        <div v-else-if="filteredAgencies.length === 0" class="text-center py-12 px-4">
+          <div class="w-20 h-20 bg-gray-100 rounded-full grid place-items-center mx-auto mb-4">
+            <Building2 class="w-9 h-9 text-gray-400" />
           </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">Aucune agence</h3>
+          <p class="text-gray-500 mb-6">Commencez par ajouter votre première agence</p>
+          <Button class="bg-orange-600 hover:bg-orange-700 text-white" @click="router.push('/admin/agencies/add')" >
+            <Plus class="w-4 h-4" />
+            Ajouter une agence
+          </Button>
+        </div>
 
-          <!-- Table -->
-          <Table v-else class="w-full">
-            <TableHead class="bg-gray-50">
+        <!-- Table -->
+        <div v-else class="overflow-x-auto">
+          <Table class="w-full">
+            <TableHeader class="bg-gray-50">
               <TableRow>
-                <TableCell class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <TableHead class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Nom
-                </TableCell>
-                <TableCell class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                </TableHead>
+                <TableHead class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Utilisateur
-                </TableCell>
-                <TableCell class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                </TableHead>
+                <TableHead class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Téléphone
-                </TableCell>
-                <TableCell class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                </TableHead>
+                <TableHead class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Adresse
-                </TableCell>
-                <TableCell class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                </TableHead>
+                <TableHead class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Ville
-                </TableCell>
-                <TableCell class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                </TableHead>
+                <TableHead class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Actions
-                </TableCell>
+                </TableHead>
               </TableRow>
-            </TableHead>
+            </TableHeader>
 
-            <TableBody class="bg-white divide-y divide-gray-200">
+            <TableBody class="bg-white divide-y divide-gray-100">
               <TableRow 
                 v-for="a in filteredAgencies" 
                 :key="a._id"
@@ -150,25 +198,25 @@ const filteredAgencies = computed(() => {
               >
                 <TableCell class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center gap-3">
-                    <Building2 :size="18" class="text-gray-500 flex-shrink-0" />
+                    <Building2 class="w-4 h-4 text-gray-500 flex-shrink-0" />
                     <span class="text-sm font-medium text-gray-900">{{ a.name }}</span>
                   </div>
                 </TableCell>
                 <TableCell class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center gap-3">
-                    <User :size="18" class="text-gray-500 flex-shrink-0" />
+                    <User class="w-4 h-4 text-gray-500 flex-shrink-0" />
                     <span class="text-sm text-gray-700">{{ a.username }}</span>
                   </div>
                 </TableCell>
                 <TableCell class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center gap-3">
-                    <Phone :size="18" class="text-gray-500 flex-shrink-0" />
+                    <Phone class="w-4 h-4 text-gray-500 flex-shrink-0" />
                     <span class="text-sm text-gray-700">{{ a.phone || 'Non renseigné' }}</span>
                   </div>
                 </TableCell>
                 <TableCell class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <MapPin :size="18" class="text-gray-500 flex-shrink-0" />
+                    <MapPin class="w-4 h-4 text-gray-500 flex-shrink-0" />
                     <span class="text-sm text-gray-700">{{ a.address || 'Non renseignée' }}</span>
                   </div>
                 </TableCell>
@@ -179,18 +227,20 @@ const filteredAgencies = computed(() => {
                   <div class="flex items-center justify-center gap-2">
                     <Button 
                       variant="outline" 
-                      @click="router.push(`/agencies/edit/${a._id}`)"
-                      class="flex items-center gap-2 px-3 py-2 text-xs"
+                      size="sm"
+                      @click="router.push(`/admin/agencies/edit/${a._id}`)"
+                      class="flex items-center gap-2"
                     >
-                      <Edit :size="14" />
+                      <Edit class="w-4 h-4" />
                       Modifier
                     </Button>
                     <Button 
                       variant="destructive" 
+                      size="sm"
                       @click="deleteAgency(a._id)"
-                      class="flex items-center gap-2 px-3 py-2 text-xs"
+                      class="flex items-center gap-2"
                     >
-                      <Trash2 :size="14" />
+                      <Trash2 class="w-4 h-4" />
                       Supprimer
                     </Button>
                   </div>
@@ -199,7 +249,7 @@ const filteredAgencies = computed(() => {
             </TableBody>
           </Table>
         </div>
+      </section>
       </div>
-    </div>
   </AdminLayout>
 </template>

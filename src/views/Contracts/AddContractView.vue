@@ -44,8 +44,10 @@ const submit = async () => {
   isSubmitting.value = true
   try {
     await contractStore.addContract(contract.value)
-    router.push('/contracts')
+    router.push('/admin/contracts')
   } catch (error) {
+    const errorMsg = contractStore.error || error.message || 'Erreur lors de la création'
+    alert('Erreur: ' + errorMsg)
     console.error('Error creating contract:', error)
   } finally {
     isSubmitting.value = false
@@ -89,7 +91,7 @@ const contractDuration = computed(() => {
         <div class="mb-8">
           <Button 
             variant="ghost" 
-            @click="router.push('/contracts')" 
+            @click="router.push('/admin/contracts')" 
             class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft :size="16" />
@@ -263,7 +265,7 @@ const contractDuration = computed(() => {
                 <Button 
                   type="button"
                   variant="outline" 
-                  @click="router.push('/contracts')"
+                  @click="router.push('/admin/contracts')"
                   class="flex-1 flex items-center justify-center gap-2"
                   :disabled="isSubmitting"
                 >

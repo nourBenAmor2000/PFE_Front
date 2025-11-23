@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import { useApi } from './useApi'
 
 export const useAgencies = defineStore('agencies', {
   state: () => ({
@@ -9,30 +9,20 @@ export const useAgencies = defineStore('agencies', {
   }),
 
   actions: {
-    // 🔐 Helper: get Authorization header
-    getAuthHeaders() {
-      const token = localStorage.getItem('token') // Assuming your token is stored here
-      return {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    },
-
     // ✅ Fetch all agencies
     async fetchAgencies() {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agencies`,
-          this.getAuthHeaders()
-        )
-        this.agencies = response.data.agencies
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agencies')
+        const response = await api.get(endpoint)
+        const data = extractData(response)
+        this.agencies = Array.isArray(data) ? data : []
       } catch (err) {
         console.error('Failed to fetch agencies:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch agencies'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -43,15 +33,16 @@ export const useAgencies = defineStore('agencies', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agencies`,
-          payload,
-          this.getAuthHeaders()
-        )
-        this.agencies.push(response.data.data)
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agencies')
+        const response = await api.post(endpoint, payload)
+        const data = extractData(response)
+        this.agencies.push(data)
+        return data
       } catch (err) {
         console.error('Failed to add agency:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to add agency'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -62,16 +53,19 @@ export const useAgencies = defineStore('agencies', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agencies/${id}`,
-          payload,
-          this.getAuthHeaders()
-        )
-        const index = this.agencies.findIndex(a => a.id === id)
-        if (index !== -1) this.agencies[index] = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agencies')
+        const response = await api.put(`${endpoint}/${id}`, payload)
+        const data = extractData(response)
+        const index = this.agencies.findIndex(a => a._id === id || a.id === id)
+        if (index !== -1) {
+          this.agencies[index] = data
+        }
+        return data
       } catch (err) {
         console.error('Failed to update agency:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to update agency'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -82,17 +76,18 @@ export const useAgencies = defineStore('agencies', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agencies/${id}`,
-          this.getAuthHeaders()
-        )
-        this.agencies = this.agencies.filter(a => a.id !== id)
+        const { api, getEndpoint } = useApi()
+        const endpoint = getEndpoint('agencies')
+        await api.delete(`${endpoint}/${id}`)
+        this.agencies = this.agencies.filter(a => (a._id !== id && a.id !== id))
       } catch (err) {
         console.error('Failed to delete agency:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to delete agency'
+        throw err
       } finally {
         this.isLoading = false
       }
     }
+    
   }
 })

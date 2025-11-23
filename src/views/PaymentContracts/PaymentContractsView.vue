@@ -1,9 +1,8 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useVisits } from '@/composables/useVisits'
-import { useClients } from '@/composables/useClient'
-import { useLogements } from '@/composables/useLogements'
+import { usePaymentContracts } from '@/composables/usePaymentContracts'
+import { useContracts } from '@/composables/useContrats'
 
 /* UI */
 import AdminLayout from '@/layouts/AdminLayout.vue'
@@ -17,19 +16,16 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
 
 /* Icons */
-import { Plus, Calendar, User, Home, Search, Edit, Trash2, Clock, MapPin, Loader } from 'lucide-vue-next'
+import { Plus, CreditCard, DollarSign, Search, Edit, Trash2, Calendar, FileText, Loader } from 'lucide-vue-next'
 
 const router = useRouter()
-const visitStore = useVisits()
-const clientStore = useClients()
-const logementStore = useLogements()
+const paymentStore = usePaymentContracts()
+const contractStore = useContracts()
 
 /* state */
 const isLoading = ref(false)
 const q = ref('')
-const status = ref('') // '', 'upcoming', 'completed', 'cancelled'
-const dateFrom = ref('')
-const dateTo = ref('')
+const statusFilter = ref('') // '', 'PENDING', 'PAID', 'FAILED', 'REFUNDED'
 const page = ref(1)
 const perPage = ref(10)
 
@@ -38,9 +34,8 @@ onMounted(async () => {
   isLoading.value = true
   try {
     await Promise.all([
-      visitStore.fetchVisits(),
-      clientStore.fetchClients(),
-      logementStore.fetchLogements(),
+      paymentStore.fetchPaymentContracts(),
+      contractStore.fetchContracts(),
     ])
   } finally {
     isLoading.value = false
@@ -48,82 +43,59 @@ onMounted(async () => {
 })
 
 /* helpers */
-const getClientName = (id) => {
-  const client = clientStore.clients.find(c => (c._id === id || c.id === id))
-  return client?.name || '—'
+const getContractInfo = (id) => {
+  const contract = contractStore.contracts.find(c => (c._id === id || c.id === id))
+  return contract ? `Contrat #${(contract._id || contract.id).slice(-6)}` : '—'
 }
 
-const getLogementTitle = (id) => {
-  const logement = logementStore.logements.find(l => (l._id === id || l.id === id))
-  return logement?.title || '—'
-}
-
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-}) : '—')
-
-const visitStatus = (visitDate) => {
-  const now = new Date()
-  const visit = new Date(visitDate)
-  if (visit < now) return 'completed'
-  return 'upcoming'
-}
+const money = (v) => `${Number(v || 0).toLocaleString('fr-FR')} TND`
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '—')
 
 const statusBadge = (s) => {
-  if (s === 'completed') return 'bg-green-50 text-green-700 border-green-200'
-  if (s === 'upcoming') return 'bg-blue-50 text-blue-700 border-blue-200'
-  if (s === 'cancelled') return 'bg-red-50 text-red-700 border-red-200'
-  return 'bg-gray-50 text-gray-700 border-gray-200'
+  const classes = {
+    'PENDING': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    'PAID': 'bg-green-50 text-green-700 border-green-200',
+    'FAILED': 'bg-red-50 text-red-700 border-red-200',
+    'REFUNDED': 'bg-gray-50 text-gray-700 border-gray-200'
+  }
+  return classes[s] || 'bg-gray-50 text-gray-700 border-gray-200'
 }
 
-const deleteVisit = async (id) => {
-  if (confirm('Êtes-vous sûr de vouloir supprimer cette visite ? Cette action est irréversible.')) {
+const deletePayment = async (id) => {
+  if (confirm('Êtes-vous sûr de vouloir supprimer ce paiement ? Cette action est irréversible.')) {
     try {
-      await visitStore.deleteVisit(id)
-      await visitStore.fetchVisits()
+      await paymentStore.deletePaymentContract(id)
+      await paymentStore.fetchPaymentContracts()
     } catch (error) {
-      alert('Erreur lors de la suppression: ' + (visitStore.error || error.message))
+      alert('Erreur lors de la suppression: ' + (paymentStore.error || error.message))
     }
   }
 }
 
 /* derived */
-const list = computed(() => visitStore.visits || [])
+const list = computed(() => paymentStore.paymentContracts || [])
 
 const filtered = computed(() => {
   let arr = [...list.value]
   const s = q.value.trim().toLowerCase()
 
   if (s) {
-    arr = arr.filter(v => {
-      const clientN = (getClientName(v.client_id) || '').toLowerCase()
-      const logementT = (getLogementTitle(v.logement_id) || '').toLowerCase()
-      return clientN.includes(s) || logementT.includes(s)
+    arr = arr.filter(p => {
+      const contractInfo = (getContractInfo(p.contract_id) || '').toLowerCase()
+      const method = (p.methode_paiement || '').toLowerCase()
+      const ref = (p.reference_transaction || '').toLowerCase()
+      const amount = String(p.montant || '')
+      return contractInfo.includes(s) || method.includes(s) || ref.includes(s) || amount.includes(s)
     })
   }
 
   // status filter
-  if (status.value) {
-    arr = arr.filter(v => visitStatus(v.visit_date) === status.value)
-  }
-
-  // date range
-  if (dateFrom.value) {
-    const from = new Date(dateFrom.value)
-    arr = arr.filter(v => new Date(v.visit_date) >= from)
-  }
-  if (dateTo.value) {
-    const to = new Date(dateTo.value)
-    to.setHours(23, 59, 59, 999)
-    arr = arr.filter(v => new Date(v.visit_date) <= to)
+  if (statusFilter.value) {
+    arr = arr.filter(p => p.statut === statusFilter.value)
   }
 
   // sort recent first
-  arr.sort((a, b) => new Date(b.visit_date) - new Date(a.visit_date))
+  arr.sort((a, b) => new Date(b.date_paiement || b._id) - new Date(a.date_paiement || a._id))
   return arr
 })
 
@@ -136,12 +108,14 @@ const paged = computed(() => {
 const from = computed(() => (filtered.value.length ? (page.value - 1) * Number(perPage.value || 1) + 1 : 0))
 const to = computed(() => Math.min(page.value * Number(perPage.value || 1), filtered.value.length))
 
-watch([q, status, dateFrom, dateTo, perPage], () => { page.value = 1 })
+watch([q, statusFilter, perPage], () => { page.value = 1 })
 
 /* quick stats */
 const total = computed(() => filtered.value.length)
-const totalUpcoming = computed(() => filtered.value.filter(v => visitStatus(v.visit_date) === 'upcoming').length)
-const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.visit_date) === 'completed').length)
+const totalPaid = computed(() => filtered.value.filter(p => p.statut === 'PAID').length)
+const totalAmount = computed(() => {
+  return filtered.value.reduce((sum, p) => sum + (Number(p.montant) || 0), 0)
+})
 </script>
 
 <template>
@@ -154,17 +128,17 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
             <nav class="text-sm text-gray-500 mb-1">
               <span class="hover:text-gray-700 cursor-default">Home</span>
               <span class="mx-2">›</span>
-              <span class="text-orange-600 font-medium">Visites</span>
+              <span class="text-orange-600 font-medium">Paiements de contrats</span>
             </nav>
             <div class="flex items-center gap-3">
               <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 grid place-items-center text-white">
-                <Calendar class="w-5 h-5" />
+                <CreditCard class="w-5 h-5" />
               </div>
               <div>
                 <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900">
-                  Gestion des visites
+                  Gestion des paiements
                 </h1>
-                <p class="text-gray-600">Gérez toutes les visites de logements</p>
+                <p class="text-gray-600">Gérez tous les paiements de contrats</p>
               </div>
             </div>
           </div>
@@ -172,10 +146,10 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
           <div class="flex items-center gap-2">
             <Button
               class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-              @click="router.push('/admin/visits/add')"
+              @click="router.push('/admin/payment-contracts/add')"
             >
               <Plus class="w-4 h-4" />
-              Ajouter une visite
+              Ajouter un paiement
             </Button>
           </div>
         </div>
@@ -185,9 +159,9 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
       <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card><CardContent class="p-5">
           <div class="flex items-center gap-3">
-            <div class="p-2.5 bg-blue-50 rounded-lg"><Calendar class="w-6 h-6 text-blue-600" /></div>
+            <div class="p-2.5 bg-blue-50 rounded-lg"><CreditCard class="w-6 h-6 text-blue-600" /></div>
             <div>
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total</p>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Paiements</p>
               <p class="text-2xl font-bold text-gray-900">{{ total }}</p>
             </div>
           </div>
@@ -195,20 +169,20 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
 
         <Card><CardContent class="p-5">
           <div class="flex items-center gap-3">
-            <div class="p-2.5 bg-green-50 rounded-lg"><Clock class="w-6 h-6 text-green-600" /></div>
+            <div class="p-2.5 bg-green-50 rounded-lg"><DollarSign class="w-6 h-6 text-green-600" /></div>
             <div>
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">À venir</p>
-              <p class="text-2xl font-bold text-gray-900">{{ totalUpcoming }}</p>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Payés</p>
+              <p class="text-2xl font-bold text-gray-900">{{ totalPaid }}</p>
             </div>
           </div>
         </CardContent></Card>
 
         <Card><CardContent class="p-5">
           <div class="flex items-center gap-3">
-            <div class="p-2.5 bg-purple-50 rounded-lg"><Calendar class="w-6 h-6 text-purple-600" /></div>
+            <div class="p-2.5 bg-purple-50 rounded-lg"><DollarSign class="w-6 h-6 text-purple-600" /></div>
             <div>
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Terminées</p>
-              <p class="text-2xl font-bold text-gray-900">{{ totalCompleted }}</p>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Montant total</p>
+              <p class="text-2xl font-bold text-gray-900">{{ money(totalAmount) }}</p>
             </div>
           </div>
         </CardContent></Card>
@@ -220,27 +194,23 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
           <!-- Search -->
           <div class="relative">
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input v-model="q" placeholder="Rechercher (client, logement)…" class="pl-9 w-80" />
+            <Input v-model="q" placeholder="Rechercher (contrat, méthode, référence)…" class="pl-9 w-80" />
           </div>
 
           <!-- Filters -->
           <div class="flex flex-wrap items-center gap-3">
-            <Select v-model="status">
+            <Select v-model="statusFilter">
               <SelectTrigger class="w-[160px]">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tous les statuts</SelectItem>
-                <SelectItem value="upcoming">À venir</SelectItem>
-                <SelectItem value="completed">Terminées</SelectItem>
+                <SelectItem value="PENDING">En attente</SelectItem>
+                <SelectItem value="PAID">Payé</SelectItem>
+                <SelectItem value="FAILED">Échoué</SelectItem>
+                <SelectItem value="REFUNDED">Remboursé</SelectItem>
               </SelectContent>
             </Select>
-
-            <div class="flex items-center gap-2">
-              <Input v-model="dateFrom" type="date" class="w-[150px]" />
-              <span class="text-gray-400">—</span>
-              <Input v-model="dateTo" type="date" class="w-[150px]" />
-            </div>
 
             <select v-model="perPage" class="rounded-lg border border-gray-200 py-2 px-3 text-sm">
               <option :value="5">5 / page</option>
@@ -255,7 +225,7 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
       <section class="bg-white rounded-2xl border shadow-sm overflow-hidden">
         <!-- Header line -->
         <div class="p-4 border-b flex items-center justify-between text-sm">
-          <h2 class="text-lg font-semibold text-gray-900">Visites</h2>
+          <h2 class="text-lg font-semibold text-gray-900">Paiements</h2>
           <p class="text-gray-600">
             Affichage <span class="font-semibold">{{ from }}</span>–<span class="font-semibold">{{ to }}</span>
             sur <span class="font-semibold">{{ filtered.length }}</span>
@@ -271,14 +241,14 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
         <!-- Empty -->
         <div v-else-if="!filtered.length" class="text-center py-12 px-4">
           <div class="w-20 h-20 bg-gray-100 rounded-full grid place-items-center mx-auto mb-4">
-            <Calendar class="w-9 h-9 text-gray-400" />
+            <CreditCard class="w-9 h-9 text-gray-400" />
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-1">Aucune visite</h3>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">Aucun paiement</h3>
           <p class="text-gray-500 mb-6">
-            {{ q || status || dateFrom || dateTo ? 'Ajuste la recherche/les filtres.' : 'Commence par ajouter ta première visite.' }}
+            {{ q || statusFilter ? 'Ajuste la recherche/les filtres.' : 'Commence par ajouter ton premier paiement.' }}
           </p>
-          <Button class="bg-orange-600 hover:bg-orange-700 text-white" @click="router.push('/admin/visits/add')">
-            Ajouter une visite
+          <Button class="bg-orange-600 hover:bg-orange-700 text-white" @click="router.push('/admin/payment-contracts/add')">
+            Ajouter un paiement
           </Button>
         </div>
 
@@ -287,67 +257,71 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
           <Table class="w-full">
             <TableHeader class="bg-gray-50">
               <TableRow>
-                <TableHead class="px-6 py-3 font-semibold text-gray-900">Client</TableHead>
-                <TableHead class="px-6 py-3 font-semibold text-gray-900">Logement</TableHead>
-                <TableHead class="px-6 py-3 font-semibold text-gray-900">Date de visite</TableHead>
+                <TableHead class="px-6 py-3 font-semibold text-gray-900">Contrat</TableHead>
+                <TableHead class="px-6 py-3 font-semibold text-gray-900">Montant</TableHead>
+                <TableHead class="px-6 py-3 font-semibold text-gray-900">Méthode</TableHead>
+                <TableHead class="px-6 py-3 font-semibold text-gray-900">Date</TableHead>
                 <TableHead class="px-6 py-3 font-semibold text-gray-900">Statut</TableHead>
+                <TableHead class="px-6 py-3 font-semibold text-gray-900">Référence</TableHead>
                 <TableHead class="px-6 py-3 font-semibold text-gray-900 text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody class="bg-white divide-y divide-gray-100">
               <TableRow
-                v-for="v in paged"
-                :key="v._id"
+                v-for="p in paged"
+                :key="p._id"
                 class="hover:bg-gray-50 transition-colors"
               >
                 <TableCell class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <User class="w-4 h-4 text-gray-500" />
+                    <FileText class="w-4 h-4 text-gray-500" />
                     <div>
-                      <p class="text-sm font-medium text-gray-900">{{ getClientName(v.client_id) }}</p>
-                      <p class="text-xs text-gray-500">Client</p>
+                      <p class="text-sm font-medium text-gray-900">{{ getContractInfo(p.contract_id) }}</p>
+                      <p class="text-xs text-gray-500">Contrat</p>
                     </div>
                   </div>
                 </TableCell>
 
-                <TableCell class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <Home class="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ getLogementTitle(v.logement_id) }}</p>
-                      <p class="text-xs text-gray-500">Logement</p>
-                    </div>
+                <TableCell class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <DollarSign class="w-4 h-4 text-gray-500" />
+                    <span class="text-sm font-semibold text-blue-600">{{ money(p.montant) }}</span>
                   </div>
+                </TableCell>
+
+                <TableCell class="px-6 py-4 whitespace-nowrap">
+                  <span class="text-sm text-gray-700">{{ p.methode_paiement || '—' }}</span>
                 </TableCell>
 
                 <TableCell class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center gap-3">
                     <Calendar class="w-4 h-4 text-gray-500" />
                     <div>
-                      <p class="text-sm font-medium text-gray-900">{{ fmtDate(v.visit_date) }}</p>
+                      <p class="text-sm font-medium text-gray-900">{{ fmtDate(p.date_paiement) }}</p>
                       <p class="text-xs text-gray-500">Date</p>
                     </div>
                   </div>
                 </TableCell>
 
                 <TableCell class="px-6 py-4 whitespace-nowrap">
-                  <Badge
-                    variant="outline"
-                    :class="statusBadge(visitStatus(v.visit_date))"
-                  >
-                    {{ visitStatus(v.visit_date) === 'completed' ? 'Terminée' : 'À venir' }}
+                  <Badge variant="outline" :class="statusBadge(p.statut)">
+                    {{ p.statut || '—' }}
                   </Badge>
+                </TableCell>
+
+                <TableCell class="px-6 py-4">
+                  <span class="text-sm text-gray-600 font-mono">{{ p.reference_transaction || '—' }}</span>
                 </TableCell>
 
                 <TableCell class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center justify-center gap-2">
                     <Button variant="outline" size="sm" class="flex items-center gap-2 px-3 py-2 text-xs"
-                      @click="router.push(`/admin/visits/edit/${v._id}`)">
+                      @click="router.push(`/admin/payment-contracts/edit/${p._id}`)">
                       <Edit :size="14" /> Modifier
                     </Button>
                     <Button variant="destructive" size="sm" class="flex items-center gap-2 px-3 py-2 text-xs"
-                      @click="deleteVisit(v._id)">
+                      @click="deletePayment(p._id)">
                       <Trash2 :size="14" /> Supprimer
                     </Button>
                   </div>
@@ -373,3 +347,4 @@ const totalCompleted = computed(() => filtered.value.filter(v => visitStatus(v.v
     </div>
   </AdminLayout>
 </template>
+

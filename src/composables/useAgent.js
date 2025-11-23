@@ -1,38 +1,29 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import { useApi } from './useApi'
 
 export const useAgents = defineStore('agents', {
   state: () => ({
     agents: [],
-    selectedAgent: null, // ✅ store single agent details
+    selectedAgent: null,
     isLoading: false,
     error: null
   }),
 
   actions: {
-    // ✅ Helper to get auth headers with token
-    getAuthHeaders() {
-      const token = localStorage.getItem('token')
-      return {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
-      }
-    },
-
     // ✅ Fetch all agents
     async fetchAgents() {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agents`,
-          this.getAuthHeaders()
-        )
-        this.agents = response.data.agents
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agents')
+        const response = await api.get(endpoint)
+        const data = extractData(response)
+        this.agents = Array.isArray(data) ? data : []
       } catch (err) {
         console.error('Failed to fetch agents:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch agents'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -44,14 +35,16 @@ export const useAgents = defineStore('agents', {
       this.error = null
       this.selectedAgent = null
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agents/${id}`,
-          this.getAuthHeaders()
-        )
-        this.selectedAgent = response.data.agent // 👈 adjust key based on your backend response
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agents')
+        const response = await api.get(`${endpoint}/${id}`)
+        const data = extractData(response)
+        this.selectedAgent = data
+        return data
       } catch (err) {
         console.error('Failed to fetch agent by ID:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch agent'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -62,15 +55,16 @@ export const useAgents = defineStore('agents', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agents`,
-          payload,
-          this.getAuthHeaders()
-        )
-        this.agents.push(response.data.data)
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agents')
+        const response = await api.post(endpoint, payload)
+        const data = extractData(response)
+        this.agents.push(data)
+        return data
       } catch (err) {
         console.error('Failed to add agent:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to add agent'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -81,16 +75,19 @@ export const useAgents = defineStore('agents', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agents/${id}`,
-          payload,
-          this.getAuthHeaders()
-        )
-        const index = this.agents.findIndex(a => a._id === id)
-        if (index !== -1) this.agents[index] = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('agents')
+        const response = await api.put(`${endpoint}/${id}`, payload)
+        const data = extractData(response)
+        const index = this.agents.findIndex(a => a._id === id || a.id === id)
+        if (index !== -1) {
+          this.agents[index] = data
+        }
+        return data
       } catch (err) {
         console.error('Failed to update agent:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to update agent'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -101,14 +98,14 @@ export const useAgents = defineStore('agents', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(
-          `${import.meta.env.VITE_BACKEND_URL}/admin/agents/${id}`,
-          this.getAuthHeaders()
-        )
-        this.agents = this.agents.filter(a => a._id !== id)
+        const { api, getEndpoint } = useApi()
+        const endpoint = getEndpoint('agents')
+        await api.delete(`${endpoint}/${id}`)
+        this.agents = this.agents.filter(a => (a._id !== id && a.id !== id))
       } catch (err) {
         console.error('Failed to delete agent:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to delete agent'
+        throw err
       } finally {
         this.isLoading = false
       }

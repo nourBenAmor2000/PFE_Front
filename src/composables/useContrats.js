@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import { useApi } from './useApi'
 
 export const useContracts = defineStore('contracts', {
   state: () => ({
@@ -14,11 +14,15 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts`)
-        this.contracts = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('contracts')
+        const response = await api.get(endpoint)
+        const data = extractData(response)
+        this.contracts = Array.isArray(data) ? data : []
       } catch (err) {
         console.error('Failed to fetch contracts:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch contracts'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -30,20 +34,25 @@ export const useContracts = defineStore('contracts', {
        * payload example:
        * {
        *   logement_id: 1,
-       *   client_name: 'John Doe',
+       *   client_id: '...',
        *   start_date: '2025-10-01',
        *   end_date: '2026-10-01',
-       *   price: 1200
+       *   amount: 1200
        * }
        */
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts`, payload)
-        this.contracts.push(response.data.data)
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('contracts')
+        const response = await api.post(endpoint, payload)
+        const data = extractData(response)
+        this.contracts.push(data)
+        return data
       } catch (err) {
         console.error('Failed to add contract:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to add contract'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -54,12 +63,19 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts/${id}`, payload)
-        const index = this.contracts.findIndex(c => c.id === id)
-        if (index !== -1) this.contracts[index] = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('contracts')
+        const response = await api.put(`${endpoint}/${id}`, payload)
+        const data = extractData(response)
+        const index = this.contracts.findIndex(c => c._id === id || c.id === id)
+        if (index !== -1) {
+          this.contracts[index] = data
+        }
+        return data
       } catch (err) {
         console.error('Failed to update contract:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to update contract'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -70,11 +86,14 @@ export const useContracts = defineStore('contracts', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/contracts/${id}`)
-        this.contracts = this.contracts.filter(c => c.id !== id)
+        const { api, getEndpoint } = useApi()
+        const endpoint = getEndpoint('contracts')
+        await api.delete(`${endpoint}/${id}`)
+        this.contracts = this.contracts.filter(c => (c._id !== id && c.id !== id))
       } catch (err) {
         console.error('Failed to delete contract:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to delete contract'
+        throw err
       } finally {
         this.isLoading = false
       }

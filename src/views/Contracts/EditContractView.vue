@@ -36,12 +36,21 @@ onMounted(async () => {
       contractStore.fetchContracts()
     ])
 
-    const existing = contractStore.contracts.find(c => c._id === route.params.id)
+    const existing = contractStore.contracts.find(c => c._id === route.params.id || c.id === route.params.id)
     if (existing) {
-      contract.value = { ...existing }
+      contract.value = { 
+        ...existing,
+        start_date: existing.start_date ? new Date(existing.start_date).toISOString().split('T')[0] : '',
+        end_date: existing.end_date ? new Date(existing.end_date).toISOString().split('T')[0] : '',
+        amount: existing.amount?.toString() || ''
+      }
+    } else {
+      alert('Contrat non trouvé')
+      router.push('/admin/contracts')
     }
   } catch (error) {
     console.error('Error loading data:', error)
+    alert('Erreur lors du chargement: ' + (error.message || 'Erreur inconnue'))
   } finally {
     isLoading.value = false
   }
@@ -51,8 +60,10 @@ const submit = async () => {
   isSubmitting.value = true
   try {
     await contractStore.updateContract(route.params.id, contract.value)
-    router.push('/contracts')
+    router.push('/admin/contracts')
   } catch (error) {
+    const errorMsg = contractStore.error || error.message || 'Erreur lors de la mise à jour'
+    alert('Erreur: ' + errorMsg)
     console.error('Error updating contract:', error)
   } finally {
     isSubmitting.value = false
@@ -105,7 +116,7 @@ const currentLogement = computed(() => {
         <div class="mb-8">
           <Button 
             variant="ghost" 
-            @click="router.push('/contracts')" 
+            @click="router.push('/admin/contracts')" 
             class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft :size="16" />
@@ -306,7 +317,7 @@ const currentLogement = computed(() => {
                 <Button 
                   type="button"
                   variant="outline" 
-                  @click="router.push('/contracts')"
+                  @click="router.push('/admin/contracts')"
                   class="flex-1 flex items-center justify-center gap-2"
                   :disabled="isSubmitting"
                 >

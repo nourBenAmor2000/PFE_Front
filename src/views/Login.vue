@@ -1,279 +1,197 @@
 <template>
-  <Transition name="modal">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-[1000] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="login-title"
-      @keydown.esc.prevent="close()"
-    >
-      <!-- overlay -->
-      <div class="absolute inset-0 bg-black/40" @click="close()" />
-
-      <!-- card -->
-      <div
-        ref="cardRef"
-        class="relative w-full max-w-md rounded-2xl border border-white/20 bg-white/80 backdrop-blur shadow-2xl supports-[backdrop-filter]:bg-white/70"
-        @click.stop
-      >
-        <!-- fond sans image -->
-        <div
-          aria-hidden="true"
-          class="pointer-events-none absolute inset-0 rounded-2xl"
-          :style="bgStyle"
-        ></div>
-
-        <!-- close -->
-        <button
-          type="button"
-          class="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white/80 text-gray-500 hover:text-gray-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-          @click="close()"
-          aria-label="Fermer la fenêtre"
-        >
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-
-        <div class="relative px-6 pt-10 pb-5">
-          <h2 id="login-title" class="mb-4 text-center text-lg font-bold text-gray-900">
-            Connectez-vous ou inscrivez-vous pour profiter de tous les services homez
-          </h2>
-
-          <!-- Social -->
-          <div class="space-y-3 mb-6">
-            <button type="button" class="btn-social bg-[#4267B2] text-white" @click="social('facebook')" aria-label="Continuer avec Facebook">
-              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              Facebook
-            </button>
-            <button type="button" class="btn-social bg-white border text-gray-800" @click="social('google')" aria-label="Continuer avec Google">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66 2.84.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Google
-            </button>
-            <button type="button" class="btn-social bg-black text-white" @click="social('apple')" aria-label="Continuer avec Apple">
-              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-              </svg>
-              Apple
-            </button>
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <div>
+        <div class="flex justify-center">
+          <div class="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
           </div>
-
-          <!-- Divider -->
-          <div class="my-4 flex items-center">
-            <div class="h-px flex-1 bg-gray-200"></div>
-            <span class="px-3 text-sm text-gray-500">ou</span>
-            <div class="h-px flex-1 bg-gray-200"></div>
+        </div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Connexion
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+          Ou
+          <router-link to="/register" class="font-medium text-teal-600 hover:text-teal-500">
+            créez un nouveau compte
+          </router-link>
+        </p>
+      </div>
+      
+      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
+        <div v-if="error" class="rounded-md bg-red-50 p-4">
+          <div class="flex">
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">{{ error }}</h3>
+            </div>
           </div>
+        </div>
+        
+        <div v-if="successMessage" class="rounded-md bg-green-50 p-4">
+          <div class="flex">
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-green-800">{{ successMessage }}</h3>
+            </div>
+          </div>
+        </div>
 
-          <!-- Form -->
-          <form class="space-y-4" novalidate :aria-busy="isLoading ? 'true' : 'false'" @submit.prevent="submit">
-            <p v-if="error" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert" aria-live="assertive">
-              {{ error }}
-            </p>
-
-            <label class="block">
-              <span class="sr-only">E-mail</span>
-              <input
-                ref="emailRef"
-                v-model.trim="form.email"
-                type="email"
-                inputmode="email"
-                autocomplete="email"
-                required
-                placeholder="E-mail"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none transition focus:border-transparent focus:ring-2 focus:ring-teal-500"
-              />
-            </label>
-
+        <div class="rounded-md shadow-sm -space-y-px">
+          <div>
+            <label for="email" class="sr-only">Adresse email</label>
+            <input
+              id="email"
+              v-model="form.email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm"
+              placeholder="Adresse email"
+            />
+          </div>
+          <div class="mt-4">
+            <label for="password" class="sr-only">Mot de passe</label>
             <div class="relative">
-              <label class="sr-only" for="password">Mot de passe</label>
               <input
-                :type="showPassword ? 'text' : 'password'"
                 id="password"
                 v-model="form.password"
+                name="password"
+                :type="showPassword ? 'text' : 'password'"
                 autocomplete="current-password"
                 required
-                minlength="6"
+                class="appearance-none rounded-md relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm"
                 placeholder="Mot de passe"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-gray-900 outline-none transition focus:border-transparent focus:ring-2 focus:ring-teal-500"
               />
               <button
                 type="button"
-                class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
-                :aria-pressed="showPassword ? 'true' : 'false'"
-                :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center"
                 @click="showPassword = !showPassword"
               >
-                <svg v-if="!showPassword" class="h-5 w-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10a5 5 0 0 1 0 10Z"/></svg>
-                <svg v-else class="h-5 w-5" viewBox="0 0 24 24"><path fill="currentColor" d="M2 5.27L3.28 4L20 20.72L18.73 22l-3.05-3.05A10.9 10.9 0 0 1 12 19c-7 0-10-7-10-7a18.1 18.1 0 0 1 5-6.22L2 5.27ZM12 7a5 5 0 0 1 5 5c0 .74-.16 1.44-.45 2.07L9.93 7.45A4.9 4.9 0 0 1 12 7Z"/></svg>
+                <svg v-if="!showPassword" class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg v-else class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
               </button>
             </div>
-
-            <div class="flex items-center justify-between">
-              <label class="inline-flex items-center gap-2 text-sm text-gray-600">
-                <input v-model="form.remember" type="checkbox" class="accent-teal-600" />
-                <span>Se souvenir de moi</span>
-              </label>
-              <button type="button" class="text-sm font-semibold text-teal-600 hover:text-teal-700" @click="forgot">
-                Mot de passe oublié ?
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              :disabled="isLoading"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3 font-semibold text-white shadow-lg shadow-teal-600/20 transition hover:brightness-[.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <span v-if="!isLoading">Connexion</span>
-              <span v-else class="inline-flex items-center gap-2">
-                <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white"></span>
-                Connexion…
-              </span>
-            </button>
-
-            <p class="text-center text-sm text-gray-600">
-              Pas encore de compte ?
-              <button type="button" class="font-semibold text-teal-600 hover:text-teal-700" @click="goRegister">Inscrivez-vous</button>
-            </p>
-          </form>
+          </div>
         </div>
-      </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input
+              id="remember-me"
+              v-model="form.remember"
+              name="remember-me"
+              type="checkbox"
+              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+            />
+            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+              Se souvenir de moi
+            </label>
+          </div>
+
+          <div class="text-sm">
+            <router-link
+              to="/forgot-password"
+              class="font-medium text-teal-600 hover:text-teal-500"
+            >
+              Mot de passe oublié ?
+            </router-link>
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+              <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </span>
+            <span v-if="isLoading">Connexion en cours...</span>
+            <span v-else>Se connecter</span>
+          </button>
+        </div>
+
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            Pas encore de compte ?
+            <router-link to="/register" class="font-medium text-teal-600 hover:text-teal-500">
+              Inscrivez-vous
+            </router-link>
+          </p>
+        </div>
+      </form>
     </div>
-  </Transition>
+  </div>
 </template>
 
-<script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
-/* v-model:open */
-const props = defineProps<{ open: boolean }>()
-
-
-const emit = defineEmits<{
-  (e: 'update:open', v: boolean): void
-  (e: 'success'): void
-  (e: 'switch-to-register'): void    // 👈 ajouté
-}>()
-const goRegister = () => {
-  close()
-  emit('switch-to-register')         // 👈 ouvre le RegisterModal côté parent
-}
 const router = useRouter()
-const { login, isLoading } = useAuth()
+const route = useRoute()
+const { login, isLoading: authLoading } = useAuth()
 
-const form = ref({ email: '', password: '', remember: false })
+const form = ref({
+  email: '',
+  password: '',
+  remember: false
+})
+
 const error = ref('')
+const successMessage = ref('')
 const showPassword = ref(false)
+const isLoading = computed(() => authLoading.value)
 
-const emailRef = ref<HTMLInputElement | null>(null)
-const cardRef = ref<HTMLElement | null>(null)
+// Get user type from route query or default to 'client'
+const userType = computed(() => route.query.type || 'client')
 
-/* fond dégradé doux (sans image) */
-const bgStyle = `background:
-  radial-gradient(900px 500px at 10% -5%, rgba(13,148,136,.12), transparent 55%),
-  radial-gradient(800px 450px at 110% 110%, rgba(13,148,136,.10), transparent 60%),
-  linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));`
-
-/* open/close helpers */
-const close = () => emit('update:open', false)
-
-/* lock body scroll quand ouvert */
-const lockScroll = (lock: boolean) => {
-  const body = document.body
-  if (lock) {
-    body.style.setProperty('overflow', 'hidden')
-  } else {
-    body.style.removeProperty('overflow')
-  }
-}
-
-/* focus trap minimal */
-let lastFocused: HTMLElement | null = null
-const onKeydown = (e: KeyboardEvent) => {
-  if (e.key !== 'Tab') return
-  const focusables = cardRef.value?.querySelectorAll<HTMLElement>(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  )
-  if (!focusables || focusables.length === 0) return
-  const first = focusables[0]
-  const last = focusables[focusables.length - 1]
-  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
-  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
-}
-
-watch(() => props.open, (val) => {
-  lockScroll(val)
-  if (val) {
-    lastFocused = document.activeElement as HTMLElement
-    setTimeout(() => emailRef.value?.focus(), 0)
-    document.addEventListener('keydown', onKeydown)
-  } else {
-    document.removeEventListener('keydown', onKeydown)
-    lastFocused?.focus?.()
+// Check for success message from registration
+onMounted(() => {
+  if (route.query.message) {
+    successMessage.value = route.query.message
+    // Clear message after 5 seconds
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 5000)
   }
 })
 
-onBeforeUnmount(() => {
-  lockScroll(false)
-  document.removeEventListener('keydown', onKeydown)
-})
-
-/* actions */
-const submit = async () => {
+const handleLogin = async () => {
   error.value = ''
-  const res = await login({
+  successMessage.value = ''
+
+  if (!form.value.email || !form.value.password) {
+    error.value = 'Veuillez remplir tous les champs'
+    return
+  }
+
+  const result = await login({
     email: form.value.email,
-    password: form.value.password,
-    rememberMe: form.value.remember
-  })
-  if (res?.success) {
-    emit('success')
-    close()
-    router.push('/dashboard')
+    password: form.value.password
+  }, userType.value)
+
+  if (result.success) {
+    // Redirect to appropriate dashboard based on user role
+    const dashboardPath = result.dashboardPath || 
+                         (result.role?.includes('admin') ? '/admin' : 
+                          result.role?.includes('agent') ? '/dashboard' : '/dashboard')
+    router.push(dashboardPath)
   } else {
-    error.value = res?.error || 'Échec de connexion. Veuillez réessayer.'
+    error.value = result.error || 'Échec de connexion. Veuillez réessayer.'
   }
 }
-
-const social = (provider: string) => {
-  // TODO: impl. auth sociale
-  console.log('social:', provider)
-}
-
-const forgot = () => {
-  // TODO
-  console.log('forgot password')
-}
-
-
 </script>
 
-<style scoped>
-/* transitions */
-.modal-enter-active, .modal-leave-active { transition: opacity .2s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
-.modal-enter-active .rounded-2xl, .modal-leave-active .rounded-2xl { transition: transform .2s ease; }
-.modal-enter-from .rounded-2xl, .modal-leave-to .rounded-2xl { transform: translateY(4px) scale(.98); }
-
-/* boutons sociaux */
-.btn-social{
-  width:100%;
-  display:flex; align-items:center; justify-content:center; gap:.6rem;
-  border-radius: .9rem;
-  padding:.8rem 1rem;
-  font-weight: 700;
-  border:1px solid transparent;
-}
-.btn-social.border{ border-color:#e5e7eb; }
-.btn-social:hover{ filter: brightness(.98); transform: translateY(-1px); transition: .12s ease; }
-</style>

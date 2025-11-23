@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import { useApi } from './useApi'
 
 export const useSubcategories = defineStore('subcategories', {
   state: () => ({
@@ -14,11 +14,15 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories`)
-        this.subcategories = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('subcategories')
+        const response = await api.get(endpoint)
+        const data = extractData(response)
+        this.subcategories = Array.isArray(data) ? data : []
       } catch (err) {
         console.error('Failed to fetch subcategories:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to fetch subcategories'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -29,11 +33,16 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories`, payload)
-        this.subcategories.push(response.data.data)
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('subcategories')
+        const response = await api.post(endpoint, payload)
+        const data = extractData(response)
+        this.subcategories.push(data)
+        return data
       } catch (err) {
         console.error('Failed to add subcategory:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to add subcategory'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -44,12 +53,19 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories/${id}`, payload)
-        const index = this.subcategories.findIndex(s => s.id === id)
-        if (index !== -1) this.subcategories[index] = response.data.data
+        const { api, getEndpoint, extractData } = useApi()
+        const endpoint = getEndpoint('subcategories')
+        const response = await api.put(`${endpoint}/${id}`, payload)
+        const data = extractData(response)
+        const index = this.subcategories.findIndex(s => s._id === id || s.id === id)
+        if (index !== -1) {
+          this.subcategories[index] = data
+        }
+        return data
       } catch (err) {
         console.error('Failed to update subcategory:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to update subcategory'
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -60,11 +76,14 @@ export const useSubcategories = defineStore('subcategories', {
       this.isLoading = true
       this.error = null
       try {
-        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/subcategories/${id}`)
-        this.subcategories = this.subcategories.filter(s => s.id !== id)
+        const { api, getEndpoint } = useApi()
+        const endpoint = getEndpoint('subcategories')
+        await api.delete(`${endpoint}/${id}`)
+        this.subcategories = this.subcategories.filter(s => (s._id !== id && s.id !== id))
       } catch (err) {
         console.error('Failed to delete subcategory:', err.response?.data || err.message)
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message || 'Failed to delete subcategory'
+        throw err
       } finally {
         this.isLoading = false
       }

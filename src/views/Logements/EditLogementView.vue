@@ -52,12 +52,23 @@ onMounted(async () => {
     await Promise.all([fetchCategories(), fetchAgencies()])
     await logementStore.fetchLogements()
     
-    const log = logementStore.logements.find(l => l._id === route.params.id)
+    const log = logementStore.logements.find(l => l._id === route.params.id || l.id === route.params.id)
     if (log) {
-      logement.value = { ...log }
+      logement.value = { 
+        ...log,
+        price: log.price?.toString() || '',
+        surface: log.surface?.toString() || '',
+        floor: log.floor?.toString() || '',
+        latitude: log.latitude?.toString() || '',
+        longitude: log.longitude?.toString() || '',
+      }
+    } else {
+      alert('Logement non trouvé')
+      router.push('/admin/logements')
     }
   } catch (error) {
     console.error('Error loading data:', error)
+    alert('Erreur lors du chargement: ' + (error.message || 'Erreur inconnue'))
   } finally {
     isLoading.value = false
   }
@@ -67,8 +78,10 @@ const submit = async () => {
   isSubmitting.value = true
   try {
     await logementStore.updateLogement(route.params.id, logement.value)
-    router.push('/logements')
+    router.push('/admin/logements')
   } catch (error) {
+    const errorMsg = logementStore.error || error.message || 'Erreur lors de la mise à jour'
+    alert('Erreur: ' + errorMsg)
     console.error('Error updating logement:', error)
   } finally {
     isSubmitting.value = false
@@ -106,9 +119,9 @@ const currentAgency = computed(() => {
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-          <Button 
+            <Button 
             variant="ghost" 
-            @click="router.push('/logements')" 
+            @click="router.push('/admin/logements')" 
             class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft :size="16" />
@@ -378,7 +391,7 @@ const currentAgency = computed(() => {
                 <Button 
                   type="button"
                   variant="outline" 
-                  @click="router.push('/logements')"
+                  @click="router.push('/admin/logements')"
                   class="flex-1 flex items-center justify-center gap-2"
                   :disabled="isSubmitting"
                 >

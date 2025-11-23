@@ -60,8 +60,10 @@ const submit = async () => {
   isSubmitting.value = true
   try {
     await logementStore.addLogement(logement.value)
-    router.push('/logements')
+    router.push('/admin/logements')
   } catch (error) {
+    const errorMsg = logementStore.error || error.message || 'Erreur lors de la création'
+    alert('Erreur: ' + errorMsg)
     console.error('Error creating logement:', error)
   } finally {
     isSubmitting.value = false
@@ -90,9 +92,9 @@ const formattedPrice = computed(() => {
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-          <Button 
+            <Button 
             variant="ghost" 
-            @click="router.push('/logements')" 
+            @click="router.push('/admin/logements')" 
             class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft :size="16" />
@@ -336,7 +338,7 @@ const formattedPrice = computed(() => {
                 <Button 
                   type="button"
                   variant="outline" 
-                  @click="router.push('/logements')"
+                  @click="router.push('/admin/logements')"
                   class="flex-1 flex items-center justify-center gap-2"
                   :disabled="isSubmitting"
                 >

@@ -14,7 +14,7 @@ const props = defineProps({
   },
   center: {
     type: Array,
-    default: () => [34.0522, -118.2437] // Los Angeles default
+    default: () => [36.8065, 10.1815] // Tunis, Tunisia default
   },
   zoom: {
     type: Number,
@@ -25,6 +25,10 @@ const props = defineProps({
     default: '400px'
   },
   showSearch: {
+    type: Boolean,
+    default: false
+  },
+  autoLoad: {
     type: Boolean,
     default: false
   }
@@ -66,16 +70,23 @@ onUnmounted(() => {
 })
 
 watch(() => props.properties, async () => {
-  if (map) {
+  if (map && !props.autoLoad) {
     const L = await import('leaflet')
     clearMarkers()
-    addPropertyMarkers(L)
+    addPropertyMarkers(L, props.properties)
   }
 }, { deep: true })
 
-const addPropertyMarkers = (L) => {
-  props.properties.forEach(property => {
-    if (property.latitude && property.longitude) {
+const addPropertyMarkers = (L, properties = null) => {
+  const propertiesToShow = properties || props.properties || []
+  
+  propertiesToShow.forEach(property => {
+    // Validate coordinates
+    const lat = property.latitude || property.lat
+    const lng = property.longitude || property.lng
+    
+    if (lat && lng && typeof lat === 'number' && typeof lng === 'number' && 
+        !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
       // Create custom icon
       const customIcon = L.divIcon({
         html: `
@@ -88,20 +99,28 @@ const addPropertyMarkers = (L) => {
         iconAnchor: [16, 16]
       })
       
-      const marker = L.marker([property.latitude, property.longitude], {
+      const marker = L.marker([lat, lng], {
         icon: customIcon
       }).addTo(map)
       
-      // Create popup content
+      // Format price in TND
+      const priceFormatted = property.price ? 
+        new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(property.price) :
+        'Prix non disponible'
+      
+      // Create popup content with more details
       const popupContent = `
-        <div class="p-2 min-w-[200px]">
-          <img src="${property.image}" alt="${property.title}" class="w-full h-24 object-cover rounded mb-2" />
-          <h3 class="font-bold text-sm mb-1">${property.title}</h3>
-          <p class="text-xs text-gray-600 mb-2">${property.address}</p>
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-orange-500">$${property.price.toLocaleString()}</span>
-            <button class="text-xs bg-orange-500 text-white px-2 py-1 rounded hover:bg-orange-600" onclick="window.selectProperty(${property.id})">
-              View Details
+        <div class="p-2 min-w-[200px] max-w-[250px]">
+          ${property.image ? `<img src="${property.image}" alt="${property.title || 'Logement'}" class="w-full h-24 object-cover rounded mb-2" />` : ''}
+          <h3 class="font-bold text-sm mb-1">${property.title || 'Logement'}</h3>
+          ${property.address ? `<p class="text-xs text-gray-600 mb-2">${property.address}</p>` : ''}
+          ${property.surface ? `<p class="text-xs text-gray-500 mb-1">Surface: ${property.surface} m²</p>` : ''}
+          ${property.category ? `<p class="text-xs text-gray-500 mb-1">Catégorie: ${property.category.name || ''}</p>` : ''}
+          ${property.agency ? `<p class="text-xs text-gray-500 mb-2">Agence: ${property.agency.name || ''}</p>` : ''}
+          <div class="flex justify-between items-center mt-2">
+            <span class="font-bold text-orange-500">${priceFormatted}</span>
+            <button class="text-xs bg-orange-500 text-white px-2 py-1 rounded hover:bg-orange-600" onclick="window.selectProperty('${property.id}')">
+              Voir détails
             </button>
           </div>
         </div>
@@ -134,7 +153,9 @@ const clearMarkers = () => {
 // Global function for popup buttons
 if (typeof window !== 'undefined') {
   window.selectProperty = (propertyId) => {
-    const property = props.properties.find(p => p.id === propertyId)
+    // Search in both props.properties and loadedProperties
+    const allProperties = [...props.properties, ...loadedProperties.value]
+    const property = allProperties.find(p => (p.id === propertyId || p._id === propertyId))
     if (property) {
       emit('property-selected', property)
     }

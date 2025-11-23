@@ -261,9 +261,10 @@ const social = (provider: string) => {
 }
 
 const forgot = () => {
-  // TODO
-  console.log('forgot password')
+  close()
+  router.push({ path: '/forgot-password', query: { type: 'client' } })
 }
+
 
 
 </script>
