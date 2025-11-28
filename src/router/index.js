@@ -204,19 +204,19 @@ const routes = [
   path: "/admin/categories",
   name: "CategoryView",
   component: CategoryView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/categories/add",
   name: "AddCategoryView",
   component: AddCategoryView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/categories/edit/:id",
   name: "EditCategoryView",
   component: EditCategoryView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -225,19 +225,19 @@ const routes = [
   path: "/admin/clients",
   name: "ClientsView",
   component: ClientsView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/clients/add",
   name: "AddClientView",
   component: AddClientView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/clients/edit/:id",
   name: "EditClientView",
   component: EditClientView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -246,19 +246,19 @@ const routes = [
   path: "/admin/contracts",
   name: "ContractsView",
   component: ContractsView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/contracts/add",
   name: "AddContractView",
   component: AddContractView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/contracts/edit/:id",
   name: "EditContractView",
   component: EditContractView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -267,19 +267,19 @@ const routes = [
   path: "/admin/logements",
   name: "LogementView",
   component: LogementView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/logements/add",
   name: "AddLogementView",
   component: () => AddLogementView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/logements/edit/:id",
   name: "EditLogementView",
   component: () => EditLogementView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -288,19 +288,19 @@ const routes = [
   path: "/admin/subcategories",
   name: "SubCategoryView",
   component: () => SubCategoryView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/subcategories/add",
   name: "AddSubCategoryView",
   component: () => AddSubCategoryView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/subcategories/edit/:id",
   name: "EditSubCategoryView",
   component: EditSubCategoryView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
 
@@ -309,19 +309,19 @@ const routes = [
   path: "/admin/visits",
   name: "VisitsView",
   component: VisitsView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/visits/add",
   name: "AddVisitsView",
   component: AddVisitsView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
 },
 {
   path: "/admin/visits/edit/:id",
   name: "EditVisitsView",
   component:  EditVisitsView,
-  meta: { requiresAuth: true, requiredRole: "admin" },
+  meta: { requiresAuth: true, requiredRole: "admin_global" },
   props: true,
 },
   {
@@ -353,6 +353,12 @@ const routes = [
     name: "AdminGlobalDashboard",
     component: () => import("../views/AdminGlobalDashboard.vue"),
     meta: { requiresAuth: true, requiredRole: "admin_global" },
+  },
+    {
+    path: "/mes-annonces",
+    name: "MyAnnouncements",
+    component: () => import("../views/MyAnnouncements.vue"),
+    meta: { requiresAuth: true },
   },
   {
     path: "/admin-agence",
@@ -441,6 +447,70 @@ const routes = [
   meta: { requiresAuth: true, requiredRole: "admin" },
   props: true,
 },
+// ===== ADMIN AGENCE SPECIFIC ROUTES (selon routes API Agency module) =====
+  // Correspondance avec les routes API définies dans PFE-Project/Modules/Agency/routes/api.php
+  // Middleware: auth:agent, agent.role:admin_agence
+  //
+  // Routes API disponibles:
+  // - Agency CRUD: GET /agency, GET /agency/{id}, POST /agency, PUT /agency/{id}, DELETE /agency/{id}
+  // - Agents CRUD: GET /agents, POST /agents, GET /agents/{id}, PUT /agents/{id}, DELETE /agents/{id}
+  // - Visits (read-only): GET /visits, GET /visits/{id}
+  
+  // Routes pour gérer leur propre agence (scopé à SA propre agence)
+  // API: GET /agency (myAgencyIndex), GET /agency/{id} (showScoped), PUT /agency/{id} (updateScoped)
+  // ===== ADMIN AGENCE SPECIFIC ROUTES =====
+
+// Agence de l’admin d’agence (scopée)
+{
+  path: "/admin-agence/agency",
+  name: "AdminAgenceAgencyView",
+  component: () => import("../views/Agencies/AgencyView.vue"),
+  meta: { requiresAuth: true, requiredRole: "admin_agence" },
+},
+{
+  path: "/admin-agence/agency/edit",
+  name: "AdminAgenceAgencyEdit",
+  component: () => import("../views/Agencies/EditAgenciesView.vue"),
+  meta: { requiresAuth: true, requiredRole: "admin_agence" },
+},
+
+// Agents de l’agence
+{
+  path: "/admin-agence/agents",
+  name: "AdminAgenceAgentsView",
+  component: () => import("../views/Agencies/AgentsView.vue"),
+  meta: { requiresAuth: true, requiredRole: "admin_agence" },
+},
+{
+  path: "/admin-agence/agents/add",
+  name: "AdminAgenceAgentAdd",
+  component: () => import("../views/Agencies/AddAgentsView.vue"),
+  meta: { requiresAuth: true, requiredRole: "admin_agence" },
+},
+{
+  path: "/admin-agence/agents/edit/:id",
+  name: "AdminAgenceAgentEdit",
+  component: () => import("../views/Agencies/EditAgentsView.vue"),
+  meta: { requiresAuth: true, requiredRole: "admin_agence" },
+  props: true,
+},
+
+// Visites (lecture seule)
+{
+  path: "/admin-agence/visits",
+  name: "AdminAgenceVisitsView",
+  component: () => import("../views/Agencies/VisitView.vue"),
+  meta: { requiresAuth: true, requiredRole: "admin_agence" },
+},
+
+  // {
+  //   path: "/admin-agence/visits/:id",
+  //   name: "AdminAgenceVisitDetail",
+  //   component: () => import("../views/AdminAgence/VisitDetailView.vue"),
+  //   meta: { requiresAuth: true, requiredRole: "admin_agence" },
+  //   props: true,
+  // },
+
  {
   path: "/forgot-password",
   name: "ForgotPassword",

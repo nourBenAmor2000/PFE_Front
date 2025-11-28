@@ -84,47 +84,60 @@
               </button>
 
               <!-- Dropdown -->
-              <transition name="fade-scale">
-                <div
-                  v-if="userMenuOpen"
-                  id="user-menu"
-                  role="menu"
-                  class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg ring-1 ring-black/5"
-                  @click.stop
-                >
-                  <router-link
-                    to="/profile"
-                    class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
-                    role="menuitem"
-                    @click="closeUserMenu"
-                  >
-                    <Icon name="user" class="h-4 w-4" />
-                    <span>Mon Profil</span>
-                  </router-link>
+             <transition name="fade-scale">
+  <div
+    v-if="userMenuOpen"
+    id="user-menu"
+    role="menu"
+    class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg ring-1 ring-black/5"
+    @click.stop
+  >
+    <router-link
+      to="/profile"
+      class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+      role="menuitem"
+      @click="closeUserMenu"
+    >
+      <Icon name="user" class="h-4 w-4" />
+      <span>Mon Profil</span>
+    </router-link>
 
-                  <router-link
-                    v-if="isAgent || isAdmin"
-                    to="/mes-annonces"
-                    class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
-                    role="menuitem"
-                    @click="closeUserMenu"
-                  >
-                    <Icon name="home" class="h-4 w-4" />
-                    <span>Mes Annonces</span>
-                  </router-link>
+    <!-- 🔹 Nouveau : Dashboard dynamique selon le rôle -->
+    <router-link
+      v-if="dashboardRoute"
+      :to="dashboardRoute"
+      class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+      role="menuitem"
+      @click="closeUserMenu"
+    >
+      <Icon name="dashboard" class="h-4 w-4" />
+      <span>Mon Tableau de bord</span>
+    </router-link>
 
-                  <div class="my-1 border-t border-gray-100"></div>
+   <router-link
+  v-if="isAgent || isAdmin"
+  to="/mes-annonces"
+  class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+  role="menuitem"
+  @click="closeUserMenu"
+>
+  <Icon name="home" class="h-4 w-4" />
+  <span>{{ adsLabel }}</span>
+</router-link>
 
-                  <button
-                    class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
-                    role="menuitem"
-                    @click="handleLogout"
-                  >
-                    <Icon name="logout" class="h-4 w-4" />
-                    <span>Déconnexion</span>
-                  </button>
-                </div>
-              </transition>
+    <div class="my-1 border-t border-gray-100"></div>
+
+    <button
+      class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
+      role="menuitem"
+      @click="handleLogout"
+    >
+      <Icon name="logout" class="h-4 w-4" />
+      <span>Déconnexion</span>
+    </button>
+  </div>
+</transition>
+
             </template>
 
             <!-- Logged out -->
@@ -223,6 +236,31 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoginModal from '@/components/LoginModal.vue'
+import RegisterModal from '@/components/RegisterModal.vue'
+// 🔹 Détecter l'admin global (adapte les valeurs à tes rôles réels)
+const isGlobalAdmin = computed(() => {
+  const role = user.value?.role
+  return role === 'ADMIN_GLOBAL' || role === 'admin_global' || role === 'GLOBAL_ADMIN'
+})
+
+// 🔹 Libellé dynamique pour le menu "Annonces"
+const adsLabel = computed(() => {
+  return isGlobalAdmin.value ? 'Toutes les annonces' : 'Mes annonces'
+})
+
+/* Modals login / register */
+const loginOpen = ref(false)
+const registerOpen = ref(false)
+
+const openLogin = () => {
+  loginOpen.value = true
+}
+
+const openRegister = () => {
+  loginOpen.value = false
+  registerOpen.value = true
+}
 
 /* Auth state */
 const { user, isAuthenticated, isAgent, isAdmin, logout, initAuth } = useAuth()
@@ -241,11 +279,14 @@ const displayName = computed(() => {
 })
 
 /* Avatar fallback */
-const avatarFallback = 'https://ui-avatars.com/api/?name=User&background=10b981&color=fff&bold=true'
+const avatarFallback =
+  'https://ui-avatars.com/api/?name=User&background=10b981&color=fff&bold=true'
 
 /* Scroll shadow */
 const scrolled = ref(false)
-const onScroll = () => { scrolled.value = window.scrollY > 4 }
+const onScroll = () => {
+  scrolled.value = window.scrollY > 4
+}
 
 onMounted(() => {
   onScroll()
@@ -258,13 +299,62 @@ onUnmounted(() => {
 
 /* Theme toggle (basic) */
 const isDark = ref(false)
-const toggleTheme = () => { isDark.value = !isDark.value; document.documentElement.classList.toggle('dark', isDark.value) }
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+}
 
 /* User menu */
 const userMenuOpen = ref(false)
 const userButtonRef = ref<HTMLElement | null>(null)
 const toggleUserMenu = () => (userMenuOpen.value = !userMenuOpen.value)
 const closeUserMenu = () => (userMenuOpen.value = false)
+
+/* Mobile drawer */
+const mobileMenuOpen = ref(false)
+const openMobileMenu = () => (mobileMenuOpen.value = true)
+const closeMobileMenu = () => (mobileMenuOpen.value = false)
+
+/* Route-aware active styles (si tu veux l’utiliser) */
+const route = useRoute()
+const isActive = (to: string) => route.path.startsWith(to)
+
+/* Logout */
+const handleLogout = () => {
+  logout()
+  userMenuOpen.value = false
+  mobileMenuOpen.value = false
+}
+
+/* 🔹 Dashboard dynamique selon le rôle */
+const dashboardRoute = computed(() => {
+  const u = user.value
+  const role = u?.role ? String(u.role).toLowerCase().trim() : null
+
+  if (!role) {
+    // pas connecté → pas de lien
+    return null
+  }
+
+  if (role === 'admin_global') {
+    return '/admin'
+  }
+
+  if (role === 'admin_agence') {
+    return '/admin-agence'
+  }
+
+  if (role === 'agent_personnel') {
+    return '/agent-personnel'
+  }
+
+  if (role === 'agent_rh') {
+    return '/agent-rh'
+  }
+
+  // client / autres
+  return '/dashboard'
+})
 
 /* Close on outside click */
 const onBodyClick = (e: MouseEvent) => {
@@ -277,47 +367,31 @@ const onBodyClick = (e: MouseEvent) => {
 
 onMounted(() => document.addEventListener('click', onBodyClick))
 onUnmounted(() => document.removeEventListener('click', onBodyClick))
-
-/* Mobile drawer */
-const mobileMenuOpen = ref(false)
-const openMobileMenu = () => (mobileMenuOpen.value = true)
-const closeMobileMenu = () => (mobileMenuOpen.value = false)
-
-/* Route-aware active styles */
-const route = useRoute()
-const isActive = (to: string) => route.path.startsWith(to)
-
-/* Logout */
-const handleLogout = () => { logout(); userMenuOpen.value = false; mobileMenuOpen.value = false }
 </script>
 
 <!-- Local components: Icon, AppNavLink, MobileLink -->
 <script lang="ts">
-import RegisterModal from '@/components/RegisterModal.vue'
-
-const registerOpen = ref(false)
-
-const openRegister = () => { loginOpen.value = false; registerOpen.value = true }
-
-import { defineComponent, h, computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import LoginModal from '@/components/LoginModal.vue'
-
-
-
-
-const loginOpen = ref(false)
-const openLogin = () => { loginOpen.value = true }
+import { defineComponent, h } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const paths: Record<string, string> = {
-  briefcase: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-  clipboard: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
-  marker: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
-  user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-  home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-  logout: 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
+  briefcase:
+    'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  clipboard:
+    'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+  marker:
+    'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
+  user:
+    'M16 7a4 4 0 11-8 0 4 4 0 018 0z M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+  home:
+    'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+  logout:
+    'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
   menu: 'M4 6h16M4 12h16M4 18h16',
-  close: 'M6 18L18 6M6 6l12 12'
+  close: 'M6 18L18 6M6 6l12 12',
+  // 🔹 Icône pour "dashboard"
+  dashboard:
+    'M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 8v-8h8v8h-8z'
 }
 
 export default defineComponent({
@@ -325,57 +399,137 @@ export default defineComponent({
   components: {
     Icon: defineComponent({
       name: 'Icon',
-      props: { name: { type: String, required: true }, class: { type: String, default: '' } },
+      props: {
+        name: { type: String, required: true },
+        class: { type: String, default: '' }
+      },
       setup(props) {
-        return () => h('svg', {
-          xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2',
-          class: props.class
-        }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: paths[props.name] || '' })])
+        return () =>
+          h(
+            'svg',
+            {
+              xmlns: 'http://www.w3.org/2000/svg',
+              viewBox: '0 0 24 24',
+              fill: 'none',
+              stroke: 'currentColor',
+              'stroke-width': '2',
+              class: props.class
+            },
+            [
+              h('path', {
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round',
+                d: paths[props.name] || ''
+              })
+            ]
+          )
       }
     }),
 
     AppNavLink: defineComponent({
       name: 'AppNavLink',
-      props: { to: { type: String, required: true }, label: { type: String, required: true }, icon: { type: String, required: true } },
+      props: {
+        to: { type: String, required: true },
+        label: { type: String, required: true },
+        icon: { type: String, required: true }
+      },
       setup(props) {
         const route = useRoute()
         const active = computed(() => route.path.startsWith(props.to))
-        return () => h(RouterLink, { to: props.to, class: [
-          'group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-          active.value ? 'text-teal-700' : 'text-gray-700 hover:text-teal-700 hover:bg-teal-50'
-        ] }, {
-          default: () => [
-            h('span', { class: 'relative inline-flex' }, [
-              h('span', { class: 'absolute -inset-1 rounded-lg bg-gradient-to-r from-teal-500/0 via-teal-500/0 to-teal-500/0 blur-sm opacity-0 transition group-hover:opacity-30' }),
-              h('span', { class: 'relative inline-flex items-center gap-2' }, [
-                h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', class: 'h-5 w-5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-                  h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: paths[props.icon] })
-                ]),
-                h('span', props.label)
-              ])
-            ])
-          ]
-        })
+        return () =>
+          h(
+            RouterLink,
+            {
+              to: props.to,
+              class: [
+                'group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                active.value
+                  ? 'text-teal-700'
+                  : 'text-gray-700 hover:text-teal-700 hover:bg-teal-50'
+              ]
+            },
+            {
+              default: () => [
+                h('span', { class: 'relative inline-flex' }, [
+                  h('span', {
+                    class:
+                      'absolute -inset-1 rounded-lg bg-gradient-to-r from-teal-500/0 via-teal-500/0 to-teal-500/0 blur-sm opacity-0 transition group-hover:opacity-30'
+                  }),
+                  h('span', { class: 'relative inline-flex items-center gap-2' }, [
+                    h(
+                      'svg',
+                      {
+                        xmlns: 'http://www.w3.org/2000/svg',
+                        viewBox: '0 0 24 24',
+                        class: 'h-5 w-5',
+                        fill: 'none',
+                        stroke: 'currentColor',
+                        'stroke-width': '2'
+                      },
+                      [
+                        h('path', {
+                          'stroke-linecap': 'round',
+                          'stroke-linejoin': 'round',
+                          d: paths[props.icon]
+                        })
+                      ]
+                    ),
+                    h('span', props.label)
+                  ])
+                ])
+              ]
+            }
+          )
       }
     }),
 
     MobileLink: defineComponent({
       name: 'MobileLink',
       emits: ['navigate'],
-      props: { to: { type: String, required: true }, label: { type: String, required: true }, icon: { type: String, required: true } },
+      props: {
+        to: { type: String, required: true },
+        label: { type: String, required: true },
+        icon: { type: String, required: true }
+      },
       setup(props, { emit }) {
         const onClick = () => emit('navigate')
-        return () => h(RouterLink, { to: props.to, onClick, class: 'inline-flex items-center gap-3 rounded-xl px-3 py-3 text-gray-700 hover:text-teal-700 hover:bg-teal-50' }, [
-          h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', class: 'h-5 w-5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-            h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: paths[props.icon] })
-          ]),
-          h('span', { class: 'text-sm font-medium' }, props.label)
-        ])
+        return () =>
+          h(
+            RouterLink,
+            {
+              to: props.to,
+              onClick,
+              class:
+                'inline-flex items-center gap-3 rounded-xl px-3 py-3 text-gray-700 hover:text-teal-700 hover:bg-teal-50'
+            },
+            [
+              h(
+                'svg',
+                {
+                  xmlns: 'http://www.w3.org/2000/svg',
+                  viewBox: '0 0 24 24',
+                  class: 'h-5 w-5',
+                  fill: 'none',
+                  stroke: 'currentColor',
+                  'stroke-width': '2'
+                },
+                [
+                  h('path', {
+                    'stroke-linecap': 'round',
+                    'stroke-linejoin': 'round',
+                    d: paths[props.icon]
+                  })
+                ]
+              ),
+              h('span', { class: 'text-sm font-medium' }, props.label)
+            ]
+          )
       }
     })
   }
 })
 </script>
+
 
 <style scoped>
 /***** Transitions *****/

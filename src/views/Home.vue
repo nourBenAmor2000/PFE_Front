@@ -3,9 +3,9 @@
     <MainMenu />
     <div class="container p-3.5 lg:px-40 xl:px-40 mx-auto my-32">
       <SectionHeaderMenu 
-        :title="'Discover Our Featured Listings'"  
-        :subtitle="'Aliquam lacinia diam quis lacus euismod'"
-        :linkText="'See All Properties'"
+        :title="'Découvrez Nos Annonces '"  
+        :subtitle="''"
+        :linkText="'Voir toutes les propriétés'"
         :linkHref="'/properties'"
       />
       <ListHouse />
@@ -24,7 +24,7 @@
       
       <SectionHeaderMenu 
         :title="'Nos Agents Exclusifs'"
-        :subtitle="'Aliquam lacinia diam quis lacus euismod'"
+        :subtitle="''"
         :linkText="'Voir tous les agents'"
         :linkHref="'/agents'"
       />

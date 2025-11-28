@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout>
+  <AdminAgentLayout>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">
@@ -318,7 +318,7 @@
       </div>
     </div>
   </div>
-  </AdminLayout>
+  </AdminAgentLayout>
 
 </template>
 
@@ -326,6 +326,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import AdminLayout from '@/layouts/AdminLayout.vue'
+import AdminAgentLayout from '@/layouts/AdminAgentLayout.vue'
 
 const { user } = useAuth()
 

@@ -241,32 +241,23 @@ const requestPasswordEmail = async (email, type = "client") => {
 
 
 
-  const updateProfile = async (updates, type) => {
-    if (!token.value) return { success: false, error: "Not authenticated" }
-    isLoading.value = true
-    try {
-      const endpoint = type === "agent" ? "/agent/profile/update" : "/client/profile/update"
-      const { data } = await api.put(endpoint, updates)
-      const updated = (data && (data.user || data.data)) || data || updates
-      const merged = Object.assign({}, user.value || {}, updated || {})
-      user.value = merged
-      localStorage.setItem("user", JSON.stringify(merged))
-      return { success: true, user: merged }
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          (error &&
-            error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          "Profile update failed",
-      }
-    } finally {
-      isLoading.value = false
+ // useAuth.js
+const updateProfile = async (payload) => {
+  try {
+    const { data } = await api.put('/client/profile/update', payload)
+    if (data.success) {
+      user.value = data.client
+      return { success: true }
+    }
+    return { success: false, error: data.message || 'Erreur inconnue' }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Erreur de validation'
     }
   }
+}
+
 
   const fetchMe = async (type = "client") => {
     const endpoint = type === "agent" ? "/agent/me" : "/admin/me"

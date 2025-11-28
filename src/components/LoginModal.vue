@@ -169,7 +169,7 @@ const goRegister = () => {
   emit('switch-to-register')         // 👈 ouvre le RegisterModal côté parent
 }
 const router = useRouter()
-const { login, isLoading } = useAuth()
+const { login, isLoading, user } = useAuth()
 
 const form = ref({ email: '', password: '', remember: false })
 const error = ref('')
@@ -244,11 +244,24 @@ const submit = async () => {
   )
 
   if (res?.success) {
-    // admin -> /dashboardadmin ; sinon /dashboard
-    const role = String(res?.user?.role || '').toLowerCase()
-    const isAdmin = role === 'admin_global' || role === 'admin_agence' || role === 'admin_agent'
-    const to = isAdmin ? '/admin' : '/dashboard'
-    emit('success'); close(); router.push(to)
+    // Redirect to appropriate dashboard based on user role
+    const userRole = user.value?.role || res?.user?.role || ''
+    
+    let dashboardPath = '/dashboard'
+    
+    if (userRole === 'admin_agence') {
+      dashboardPath = '/admin-agence'
+    } else if (userRole === 'admin_global') {
+      dashboardPath = '/admin'
+    } else if (userRole === 'agent_personnel') {
+      dashboardPath = '/agent-personnel'
+    } else if (userRole === 'agent_rh') {
+      dashboardPath = '/agent-rh'
+    } else if (userRole === 'client' || userRole === 'Client') {
+      dashboardPath = '/dashboard'
+    }
+    
+    emit('success'); close(); router.push(dashboardPath)
   } else {
     error.value = res?.error || 'Échec de connexion. Veuillez réessayer.'
   }

@@ -1,4 +1,5 @@
 <template>
+  
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">

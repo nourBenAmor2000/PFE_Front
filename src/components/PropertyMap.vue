@@ -1,11 +1,13 @@
 <template>
   <div class="property-map">
-    <div ref="mapContainer" class="w-full h-full rounded-lg"></div>
+    <div ref="mapContainer" class="w-full rounded-lg" :style="{ height }"></div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 const props = defineProps({
   properties: {
@@ -14,7 +16,7 @@ const props = defineProps({
   },
   center: {
     type: Array,
-    default: () => [36.8065, 10.1815] // Tunis, Tunisia default
+    default: () => [36.8065, 10.1815] // Tunis par défaut
   },
   zoom: {
     type: Number,
@@ -23,14 +25,6 @@ const props = defineProps({
   height: {
     type: String,
     default: '400px'
-  },
-  showSearch: {
-    type: Boolean,
-    default: false
-  },
-  autoLoad: {
-    type: Boolean,
-    default: false
   }
 })
 
@@ -38,24 +32,23 @@ const emit = defineEmits(['property-selected', 'map-moved'])
 
 const mapContainer = ref(null)
 let map = null
-let markers = []
+let markersLayer = null
 
-onMounted(async () => {
-  // Dynamically import Leaflet
-  const L = await import('leaflet')
-  
-  // Initialize map
-  map = L.map(mapContainer.value).setView(props.center, props.zoom)
-  
-  // Add tile layer
+onMounted(() => {
+  map = L.map(mapContainer.value, {
+    center: props.center,
+    zoom: props.zoom,
+    scrollWheelZoom: true,
+    doubleClickZoom: true
+  })
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(map)
-  
-  // Add properties as markers
-  addPropertyMarkers(L)
-  
-  // Listen for map events
+
+  markersLayer = L.layerGroup().addTo(map)
+  updateMarkers()
+
   map.on('moveend', () => {
     const center = map.getCenter()
     const zoom = map.getZoom()
@@ -66,107 +59,93 @@ onMounted(async () => {
 onUnmounted(() => {
   if (map) {
     map.remove()
+    map = null
   }
 })
 
-watch(() => props.properties, async () => {
-  if (map && !props.autoLoad) {
-    const L = await import('leaflet')
-    clearMarkers()
-    addPropertyMarkers(L, props.properties)
-  }
-}, { deep: true })
+watch(
+  () => props.properties,
+  () => {
+    if (map && markersLayer) {
+      updateMarkers()
+    }
+  },
+  { deep: true }
+)
 
-const addPropertyMarkers = (L, properties = null) => {
-  const propertiesToShow = properties || props.properties || []
-  
-  propertiesToShow.forEach(property => {
-    // Validate coordinates
-    const lat = property.latitude || property.lat
-    const lng = property.longitude || property.lng
-    
-    if (lat && lng && typeof lat === 'number' && typeof lng === 'number' && 
-        !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-      // Create custom icon
+watch(
+  () => [props.center, props.zoom],
+  ([center, zoom]) => {
+    if (map && center && Array.isArray(center)) {
+      map.setView(center, zoom || map.getZoom())
+    }
+  },
+  { deep: true }
+)
+
+function updateMarkers() {
+  markersLayer.clearLayers()
+
+  const pts = []
+
+  props.properties.forEach(property => {
+    const lat = property.latitude ?? property.lat
+    const lng = property.longitude ?? property.lng
+
+    if (
+      typeof lat === 'number' &&
+      typeof lng === 'number' &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lng)
+    ) {
+      pts.push([lat, lng])
+
+      const price = typeof property.price === 'number' ? property.price : 0
+      const priceLabel = price
+        ? new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'TND',
+            maximumFractionDigits: 0
+          }).format(price)
+        : 'Prix non disponible'
+
       const customIcon = L.divIcon({
         html: `
-          <div class="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg">
-            $${Math.round(property.price / 1000)}K
+          <div class="bg-orange-500 text-white rounded-full w-9 h-9 flex items-center justify-center text-xs font-bold shadow-lg">
+            ${price ? Math.round(price / 1000) + 'k' : '?'}
           </div>
         `,
         className: 'custom-marker',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
       })
-      
-      const marker = L.marker([lat, lng], {
-        icon: customIcon
-      }).addTo(map)
-      
-      // Format price in TND
-      const priceFormatted = property.price ? 
-        new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(property.price) :
-        'Prix non disponible'
-      
-      // Create popup content with more details
-      const popupContent = `
-        <div class="p-2 min-w-[200px] max-w-[250px]">
-          ${property.image ? `<img src="${property.image}" alt="${property.title || 'Logement'}" class="w-full h-24 object-cover rounded mb-2" />` : ''}
-          <h3 class="font-bold text-sm mb-1">${property.title || 'Logement'}</h3>
-          ${property.address ? `<p class="text-xs text-gray-600 mb-2">${property.address}</p>` : ''}
-          ${property.surface ? `<p class="text-xs text-gray-500 mb-1">Surface: ${property.surface} m²</p>` : ''}
-          ${property.category ? `<p class="text-xs text-gray-500 mb-1">Catégorie: ${property.category.name || ''}</p>` : ''}
-          ${property.agency ? `<p class="text-xs text-gray-500 mb-2">Agence: ${property.agency.name || ''}</p>` : ''}
-          <div class="flex justify-between items-center mt-2">
-            <span class="font-bold text-orange-500">${priceFormatted}</span>
-            <button class="text-xs bg-orange-500 text-white px-2 py-1 rounded hover:bg-orange-600" onclick="window.selectProperty('${property.id}')">
-              Voir détails
-            </button>
-          </div>
+
+      const marker = L.marker([lat, lng], { icon: customIcon }).addTo(markersLayer)
+
+      const popupHtml = `
+        <div style="min-width:180px;max-width:220px;">
+          ${property.image ? `<img src="${property.image}" alt="${property.title || 'Logement'}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:4px;" />` : ''}
+          <div style="font-weight:600;margin-bottom:2px;">${property.title || 'Logement'}</div>
+          ${property.address ? `<div style="font-size:12px;color:#4b5563;margin-bottom:4px;">${property.address}</div>` : ''}
+          <div style="font-size:13px;font-weight:600;color:#ea580c;">${priceLabel}</div>
         </div>
       `
-      
-      marker.bindPopup(popupContent)
-      markers.push(marker)
-      
-      // Add click event
-      marker.on('click', () => {
-        emit('property-selected', property)
-      })
+
+      marker.bindPopup(popupHtml)
+      marker.on('click', () => emit('property-selected', property))
     }
   })
-  
-  // Fit map to show all markers if there are any
-  if (markers.length > 0) {
-    const group = new L.featureGroup(markers)
-    map.fitBounds(group.getBounds().pad(0.1))
-  }
-}
 
-const clearMarkers = () => {
-  markers.forEach(marker => {
-    map.removeLayer(marker)
-  })
-  markers = []
-}
-
-// Global function for popup buttons
-if (typeof window !== 'undefined') {
-  window.selectProperty = (propertyId) => {
-    // Search in both props.properties and loadedProperties
-    const allProperties = [...props.properties, ...loadedProperties.value]
-    const property = allProperties.find(p => (p.id === propertyId || p._id === propertyId))
-    if (property) {
-      emit('property-selected', property)
-    }
+  if (pts.length) {
+    const bounds = L.latLngBounds(pts)
+    map.fitBounds(bounds.pad(0.15))
+  } else {
+    map.setView(props.center, props.zoom)
   }
 }
 </script>
 
 <style>
-/* Leaflet CSS - Import the required styles */
-@import 'leaflet/dist/leaflet.css';
-
 .custom-marker {
   background: transparent !important;
   border: none !important;
@@ -177,6 +156,6 @@ if (typeof window !== 'undefined') {
 }
 
 .leaflet-popup-content {
-  margin: 0;
+  margin: 6px 8px;
 }
 </style>

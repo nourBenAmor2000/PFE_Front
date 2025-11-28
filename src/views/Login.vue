@@ -142,7 +142,7 @@ import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
-const { login, isLoading: authLoading } = useAuth()
+const { login, isLoading: authLoading, user } = useAuth()
 
 const form = ref({
   email: '',
@@ -185,9 +185,22 @@ const handleLogin = async () => {
 
   if (result.success) {
     // Redirect to appropriate dashboard based on user role
-    const dashboardPath = result.dashboardPath || 
-                         (result.role?.includes('admin') ? '/admin' : 
-                          result.role?.includes('agent') ? '/dashboard' : '/dashboard')
+    const userRole = user.value?.role || result.user?.role
+    
+    let dashboardPath = '/dashboard'
+    
+    if (userRole === 'admin_agence') {
+      dashboardPath = '/admin-agence'
+    } else if (userRole === 'admin_global') {
+      dashboardPath = '/admin-global'
+    } else if (userRole === 'agent_personnel') {
+      dashboardPath = '/agent-personnel'
+    } else if (userRole === 'agent_rh') {
+      dashboardPath = '/agent-rh'
+    } else if (userRole === 'client' || userRole === 'Client') {
+      dashboardPath = '/dashboard'
+    }
+    
     router.push(dashboardPath)
   } else {
     error.value = result.error || 'Échec de connexion. Veuillez réessayer.'
